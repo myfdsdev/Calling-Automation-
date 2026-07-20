@@ -1,0 +1,121 @@
+import { z } from 'zod';
+
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+
+/* ---------------- Auth ---------------- */
+export const registerSchema = z.object({
+  name: z.string().min(2, 'Name is too short').max(80),
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  companyName: z.string().max(120).optional().default(''),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+/* ---------------- Telephony (user's own Twilio) ---------------- */
+export const twilioConnectSchema = z.object({
+  accountSid: z
+    .string()
+    .trim()
+    .regex(/^AC[0-9a-f]{32}$/i, 'Account SID should start with "AC" followed by 32 characters'),
+  authToken: z.string().trim().min(20, 'That Auth Token looks too short').max(200),
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(/^\+[1-9]\d{7,14}$/, 'Use E.164 format, e.g. +14155550123'),
+});
+
+export const twilioLookupSchema = z.object({
+  accountSid: z
+    .string()
+    .trim()
+    .regex(/^AC[0-9a-f]{32}$/i, 'Account SID should start with "AC" followed by 32 characters'),
+  authToken: z.string().trim().min(20, 'That Auth Token looks too short').max(200),
+});
+
+/* ---------------- Agent ---------------- */
+export const agentSchema = z.object({
+  name: z.string().min(2, 'Agent name is required').max(80),
+  companyName: z.string().max(120).optional().default(''),
+  serviceName: z.string().max(120).optional().default(''),
+  language: z.string().max(20).optional().default('en-US'),
+  voiceId: z.string().max(40).optional().default('jennifer'),
+
+  callGoal: z.string().max(400).optional().default(''),
+  targetCustomer: z.string().max(400).optional().default(''),
+  introduction: z.string().max(600).optional().default(''),
+  offerDescription: z.string().max(600).optional().default(''),
+
+  openingMessage: z.string().max(600).optional().default(''),
+  qualificationQuestions: z.array(z.string().max(300)).max(10).optional().default([]),
+  objectionInstructions: z.string().max(1000).optional().default(''),
+  closingMessage: z.string().max(600).optional().default(''),
+
+  status: z.enum(['active', 'inactive']).optional(),
+});
+
+export const agentUpdateSchema = agentSchema.partial();
+
+export const generateScriptSchema = z.object({
+  companyName: z.string().max(120).optional().default(''),
+  serviceName: z.string().max(120).optional().default(''),
+  callGoal: z.string().max(400).optional().default(''),
+  targetCustomer: z.string().max(400).optional().default(''),
+  offerDescription: z.string().max(600).optional().default(''),
+  language: z.string().max(20).optional().default('en-US'),
+});
+
+/* ---------------- Leads ---------------- */
+export const leadSearchSchema = z.object({
+  agentId: objectId.optional(),
+  businessCategory: z.string().min(2, 'Business category is required').max(120),
+  country: z.string().max(80).optional().default(''),
+  state: z.string().max(80).optional().default(''),
+  city: z.string().max(80).optional().default(''),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  minRating: z.coerce.number().min(0).max(5).optional().default(0),
+  minReviews: z.coerce.number().int().min(0).optional().default(0),
+  mustHavePhone: z.boolean().optional().default(true),
+  mustHaveWebsite: z.boolean().optional().default(false),
+  excludeCalled: z.boolean().optional().default(true),
+});
+
+export const selectBestSchema = z.object({
+  leadIds: z.array(objectId).optional(),
+  count: z.coerce.number().int().min(1).max(50).optional().default(10),
+});
+
+export const scoreSchema = z.object({
+  leadIds: z.array(objectId).min(1, 'Select at least one lead'),
+});
+
+export const leadUpdateSchema = z.object({
+  selectionStatus: z.enum(['unselected', 'selected', 'removed']).optional(),
+  callStatus: z
+    .enum(['new', 'selected', 'in_queue', 'calling', 'completed', 'failed', 'do_not_call'])
+    .optional(),
+  doNotCall: z.boolean().optional(),
+  notes: z.string().max(2000).optional(),
+  agentId: objectId.nullable().optional(),
+});
+
+/* ---------------- Automation ---------------- */
+export const automationSchema = z.object({
+  agentId: objectId,
+  name: z.string().max(120).optional().default(''),
+  businessCategory: z.string().max(120).optional().default(''),
+  location: z.string().max(160).optional().default(''),
+  leadIds: z.array(objectId).min(1, 'Select at least one lead to call'),
+  delayBetweenCalls: z.coerce.number().int().min(5).max(600).optional().default(15),
+  maxRetries: z.coerce.number().int().min(0).max(5).optional().default(1),
+  callWindow: z
+    .object({
+      start: z.string().max(5).optional().default(''),
+      end: z.string().max(5).optional().default(''),
+    })
+    .optional()
+    .default({ start: '', end: '' }),
+});

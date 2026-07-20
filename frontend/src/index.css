@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light neutral page background, white cards, soft indigo accent. */
+    --background: 240 20% 98%;
+    --foreground: 224 24% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 24% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 24% 16%;
+
+    --primary: 245 58% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 18% 95%;
+    --secondary-foreground: 224 24% 22%;
+
+    --muted: 240 16% 95%;
+    --muted-foreground: 224 12% 46%;
+
+    --accent: 245 60% 96%;
+    --accent-foreground: 245 58% 42%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 56% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 240 14% 91%;
+    --input: 240 14% 90%;
+    --ring: 245 58% 55%;
+
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+      Arial, sans-serif;
+  }
+
+  /* Thin, tasteful scrollbars for tables. */
+  ::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply mx-auto w-full max-w-content px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+  }
+}
