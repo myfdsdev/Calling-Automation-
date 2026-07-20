@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   searchLeads,
+  createLead,
   scoreExistingLeads,
   selectBestLeads,
   listLeads,
@@ -12,6 +13,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
   leadSearchSchema,
+  leadCreateSchema,
   scoreSchema,
   selectBestSchema,
   leadUpdateSchema,
@@ -21,6 +23,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.post('/search', validate(leadSearchSchema), searchLeads);
+router.post('/', validate(leadCreateSchema), createLead);
 router.post('/score', validate(scoreSchema), scoreExistingLeads);
 router.post('/select-best', validate(selectBestSchema), selectBestLeads);
 router.get('/', listLeads);

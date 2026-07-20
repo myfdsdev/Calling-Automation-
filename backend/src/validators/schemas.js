@@ -83,6 +83,28 @@ export const leadSearchSchema = z.object({
   excludeCalled: z.boolean().optional().default(true),
 });
 
+// Manually added lead (testing / one-off entries). Phone is required because a
+// lead with no number can never be called.
+export const leadCreateSchema = z.object({
+  businessName: z.string().trim().min(2, 'Business name is required').max(160),
+  phone: z
+    .string()
+    .trim()
+    .min(5, 'Enter a valid phone number with country code, e.g. +14155550123')
+    .max(25),
+  website: z.string().trim().max(300).optional().default(''),
+  address: z.string().trim().max(300).optional().default(''),
+  city: z.string().trim().max(80).optional().default(''),
+  state: z.string().trim().max(80).optional().default(''),
+  country: z.string().trim().max(80).optional().default(''),
+  category: z.string().trim().max(120).optional().default(''),
+  rating: z.coerce.number().min(0).max(5).optional().default(0),
+  reviewCount: z.coerce.number().int().min(0).optional().default(0),
+  notes: z.string().max(2000).optional().default(''),
+  // Empty string from an unselected dropdown means "no agent", not an invalid id.
+  agentId: z.preprocess((v) => (v === '' || v == null ? undefined : v), objectId.optional()),
+});
+
 export const selectBestSchema = z.object({
   leadIds: z.array(objectId).optional(),
   count: z.coerce.number().int().min(1).max(50).optional().default(10),

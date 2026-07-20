@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, PhoneOff, ThumbsUp, ThumbsDown, Search, Eye } from 'lucide-react';
+import { Users, PhoneOff, ThumbsUp, ThumbsDown, Search, Eye, UserPlus } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatCard } from '@/components/common/StatCard';
 import { FilterBar } from '@/components/common/FilterBar';
@@ -11,6 +11,7 @@ import { StatGridSkeleton, TableSkeleton } from '@/components/common/LoadingSkel
 import { QueryError } from '@/components/common/QueryError';
 import { Button } from '@/components/ui/button';
 import { LeadDrawer } from '@/pages/partials/LeadDrawer';
+import { AddLeadDialog } from '@/pages/partials/AddLeadDialog';
 import { useLeads, useAgents } from '@/hooks/queries';
 import { LEAD_STATUS_OPTIONS, CALL_RESULT_OPTIONS } from '@/lib/constants';
 import { formatDate, cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ export default function Leads() {
   const [city, setCity] = useState('');
 
   const [drawerLead, setDrawerLead] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data: agents } = useAgents();
   const { data, isLoading, isError, refetch } = useLeads({
@@ -85,9 +87,14 @@ export default function Leads() {
         title="Leads"
         description="Manage every lead you've found and track its calling outcome."
         actions={
-          <Button asChild variant="outline">
-            <Link to="/lead-finder"><Search className="h-4 w-4" /> Find leads</Link>
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setAddOpen(true)}>
+              <UserPlus className="h-4 w-4" /> Add lead
+            </Button>
+            <Button asChild>
+              <Link to="/lead-finder"><Search className="h-4 w-4" /> Find leads</Link>
+            </Button>
+          </>
         }
       />
 
@@ -129,14 +136,21 @@ export default function Leads() {
         <EmptyState
           icon={Users}
           title="No leads match"
-          description="Adjust your filters, or head to the Lead Finder to discover new leads."
+          description="Adjust your filters, search the Lead Finder, or add a lead manually to test an agent."
           action={
-            <Button asChild>
-              <Link to="/lead-finder">Find leads</Link>
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild>
+                <Link to="/lead-finder">Find leads</Link>
+              </Button>
+              <Button variant="outline" onClick={() => setAddOpen(true)}>
+                <UserPlus className="h-4 w-4" /> Add lead manually
+              </Button>
+            </div>
           }
         />
       )}
+
+      <AddLeadDialog open={addOpen} onOpenChange={setAddOpen} />
 
       <LeadDrawer
         leadId={drawerLead}

@@ -82,6 +82,10 @@ export function useLeadMutations() {
     qc.invalidateQueries({ queryKey: ['leads'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
+  const create = useMutation({
+    mutationFn: async (payload) => (await api.post('/leads', payload)).data.lead,
+    onSuccess: invalidate,
+  });
   const update = useMutation({
     mutationFn: async ({ id, ...payload }) => (await api.put(`/leads/${id}`, payload)).data.lead,
     onSuccess: invalidate,
@@ -94,7 +98,7 @@ export function useLeadMutations() {
     mutationFn: async (payload) => (await api.post('/leads/select-best', payload)).data,
     onSuccess: invalidate,
   });
-  return { update, remove, selectBest };
+  return { create, update, remove, selectBest };
 }
 
 /* -------------------------- Automations -------------------------- */

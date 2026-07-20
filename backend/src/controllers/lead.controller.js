@@ -2,9 +2,10 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { Lead } from '../models/Lead.js';
 import { User } from '../models/User.js';
+import { Agent } from '../models/Agent.js';
 import { findLeads } from '../services/leadProvider.service.js';
 import { scoreLeads } from '../services/gemini.service.js';
-import { isValidPhone } from '../utils/phone.js';
+import { isValidPhone, normalizePhone } from '../utils/phone.js';
 
 const dedupeKey = (l) =>
   `${(l.businessName || '').toLowerCase().trim()}|${(l.phone || '').replace(/\D/g, '')}`;
@@ -87,6 +88,48 @@ export const searchLeads = asyncHandler(async (req, res) => {
     creditsRemaining: updated.leadCredits,
     scoreSource: scores[0]?.source || 'fallback',
   });
+});
+
+/* ---------------------- Manually add a lead ---------------------- */
+export const createLead = asyncHandler(async (req, res) => {
+  const body = req.body;
+
+  const phone = normalizePhone(body.phone);
+  if (!isValidPhone(phone)) {
+    throw ApiError.badRequest(
+      'Enter a valid phone number in international format, e.g. +14155550123',
+    );
+  }
+
+  const key = dedupeKey({ businessName: body.businessName, phone });
+  const existing = await Lead.findOne({ userId: req.user._id, dedupeKey: key });
+  if (existing) {
+    throw ApiError.conflict('You already have a lead with this business name and phone number');
+  }
+
+  if (body.agentId) {
+    const agent = await Agent.findOne({ _id: body.agentId, userId: req.user._id });
+    if (!agent) throw ApiError.badRequest('Select a valid agent');
+  }
+
+  const [score] = await scoreLeads([{ ...body, phone }], { category: body.category });
+
+  // Manual leads don't consume lead credits — they didn't come from the provider.
+  const lead = await Lead.create({
+    ...body,
+    phone,
+    userId: req.user._id,
+    agentId: body.agentId || null,
+    dedupeKey: key,
+    source: 'manual',
+    leadScore: score.score,
+    scoreReason: score.reason,
+    // Ready to call straight away.
+    selectionStatus: 'selected',
+    callStatus: 'selected',
+  });
+
+  res.status(201).json({ lead });
 });
 
 /* -------------------------- Re-score ----------------------------- */
