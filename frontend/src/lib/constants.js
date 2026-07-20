@@ -1,10 +1,14 @@
+// Voice ids accepted by Vapi's built-in voice provider.
+// Must stay in sync with backend/src/config/voices.js — anything else is
+// rejected by the provider when the agent is synced.
 export const VOICES = [
-  { id: 'jennifer', label: 'Jennifer (Female, US)' },
-  { id: 'mark', label: 'Mark (Male, US)' },
-  { id: 'sarah', label: 'Sarah (Female, UK)' },
-  { id: 'ryan', label: 'Ryan (Male, US)' },
-  { id: 'paula', label: 'Paula (Female, AU)' },
-];
+  'Elliot', 'Kai', 'Nico', 'Cole', 'Harry', 'Spencer', 'Leo', 'Dan', 'Zac',
+  'Sid', 'Neil', 'Godfrey', 'Gustavo', 'Rohan', 'Sagar',
+  'Emma', 'Clara', 'Savannah', 'Layla', 'Kylie', 'Lily', 'Hana', 'Neha',
+  'Paige', 'Naina', 'Leah', 'Tara', 'Jess', 'Mia', 'Zoe',
+].map((id) => ({ id, label: id }));
+
+export const DEFAULT_VOICE = 'Elliot';
 
 export const LANGUAGES = [
   { id: 'en-US', label: 'English (US)' },

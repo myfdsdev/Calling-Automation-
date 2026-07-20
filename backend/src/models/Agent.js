@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { DEFAULT_VOICE } from '../config/voices.js';
 
 export const AGENT_STATUS = ['active', 'inactive'];
 
@@ -14,7 +15,7 @@ const agentSchema = new mongoose.Schema(
     companyName: { type: String, trim: true, default: '' },
     serviceName: { type: String, trim: true, default: '' },
     language: { type: String, default: 'en-US' },
-    voiceId: { type: String, default: 'jennifer' },
+    voiceId: { type: String, default: DEFAULT_VOICE },
 
     // Call objective
     callGoal: { type: String, default: '' },

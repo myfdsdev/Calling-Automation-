@@ -24,14 +24,14 @@ import {
 } from '@/components/ui/select';
 import { useAgentMutations } from '@/hooks/queries';
 import { getErrorMessage } from '@/lib/api';
-import { VOICES, LANGUAGES } from '@/lib/constants';
+import { VOICES, LANGUAGES, DEFAULT_VOICE } from '@/lib/constants';
 
 const EMPTY = {
   name: '',
   companyName: '',
   serviceName: '',
   language: 'en-US',
-  voiceId: 'jennifer',
+  voiceId: DEFAULT_VOICE,
   callGoal: '',
   targetCustomer: '',
   introduction: '',

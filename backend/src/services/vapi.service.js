@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env, features } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
+import { isValidVoice, DEFAULT_VOICE } from '../config/voices.js';
 
 const VAPI_BASE = 'https://api.vapi.ai';
 
@@ -66,8 +67,17 @@ function buildAssistant(agent) {
       model: 'gpt-4o-mini',
       messages: [{ role: 'system', content: buildSystemPrompt(agent) }],
     },
-    voice: { provider: 'vapi', voiceId: agent.voiceId || 'jennifer' },
-    transcriber: { provider: 'deepgram', model: 'nova-2', language: 'en' },
+    voice: {
+      provider: 'vapi',
+      // Guard against agents saved before the voice list was corrected.
+      voiceId: isValidVoice(agent.voiceId) ? agent.voiceId : DEFAULT_VOICE,
+    },
+    transcriber: {
+      provider: 'deepgram',
+      model: 'nova-2',
+      // "en-US" -> "en"; Deepgram wants the base language code.
+      language: (agent.language || 'en-US').split('-')[0],
+    },
   };
 
   // Route call events back to our webhook when a public URL is configured.
@@ -80,28 +90,60 @@ function buildAssistant(agent) {
   return payload;
 }
 
-/**
- * Create or update the Vapi assistant for an agent. Returns the assistant id.
- * Without a Vapi key we return a local placeholder id so agents can still be
- * designed and saved — but calling is blocked separately (see startCall).
- */
-export async function upsertAssistant(agent) {
-  if (!env.vapi.privateKey) return agent.vapiAssistantId || `local-assistant-${agent._id}`;
+/** True when an id is a local placeholder rather than a real Vapi assistant. */
+export const isPlaceholderAssistant = (id) => !id || /^(demo|local)-/.test(id);
 
+/**
+ * Push an agent to Vapi and return its assistant id. Throws on failure.
+ * Use `upsertAssistant` when a failure shouldn't block the caller.
+ */
+export async function syncAssistant(agent) {
+  if (!env.vapi.privateKey) {
+    throw ApiError.serviceUnavailable('Calling is unavailable right now. Please contact support.');
+  }
   const payload = buildAssistant(agent);
   try {
-    const isRemote = agent.vapiAssistantId && !/^(demo|local)-/.test(agent.vapiAssistantId);
-    if (isRemote) {
+    if (!isPlaceholderAssistant(agent.vapiAssistantId)) {
       await client().patch(`/assistant/${agent.vapiAssistantId}`, payload);
       return agent.vapiAssistantId;
     }
     const { data } = await client().post('/assistant', payload);
     return data.id;
   } catch (err) {
-    console.warn('[vapi] upsertAssistant failed:', vapiError(err));
-    // Don't block agent creation on a provider hiccup — calling will surface it.
+    if (err instanceof ApiError) throw err;
+    throw ApiError.badRequest(vapiError(err, 'Could not sync this agent to the calling service'));
+  }
+}
+
+/**
+ * Create or update the Vapi assistant for an agent, tolerating failure.
+ * Without a Vapi key (or on a provider hiccup) we return a local placeholder id
+ * so agents can still be designed and saved — calling heals it later via
+ * `ensureAssistant`.
+ */
+export async function upsertAssistant(agent) {
+  if (!env.vapi.privateKey) return agent.vapiAssistantId || `local-assistant-${agent._id}`;
+  try {
+    return await syncAssistant(agent);
+  } catch (err) {
+    console.warn('[vapi] upsertAssistant failed:', err.message);
     return agent.vapiAssistantId || `local-assistant-${agent._id}`;
   }
+}
+
+/**
+ * Guarantee the agent has a real Vapi assistant before a call. Agents created
+ * while Vapi was unconfigured carry a placeholder id — rather than making the
+ * user re-save the agent, sync it on demand and persist the new id.
+ */
+export async function ensureAssistant(agent) {
+  if (!isPlaceholderAssistant(agent.vapiAssistantId)) return agent.vapiAssistantId;
+
+  const id = await syncAssistant(agent);
+  agent.vapiAssistantId = id;
+  await agent.save();
+  console.log(`[vapi] auto-synced assistant for agent ${agent._id} -> ${id}`);
+  return id;
 }
 
 export async function deleteAssistant(assistantId) {
@@ -215,10 +257,10 @@ export async function startCall({ assistantId, phoneNumberId, phone, variableVal
     );
   }
 
-  if (!assistantId || /^(demo|local)-/.test(assistantId)) {
+  if (isPlaceholderAssistant(assistantId)) {
     throw fatal(
       ApiError.badRequest(
-        'This agent has no Vapi assistant yet. Open the agent and save it again to sync it.',
+        'This agent could not be synced to the calling service. Try "Sync agents" in API Settings.',
       ),
     );
   }

@@ -138,8 +138,10 @@ async function advance(automationId) {
   let providerCallId = '';
   let simulated = false;
   try {
+    // Heals agents created before Vapi was configured.
+    const assistantId = await vapi.ensureAssistant(agent);
     const res = await vapi.startCall({
-      assistantId: agent.vapiAssistantId,
+      assistantId,
       phoneNumberId: owner.twilio?.vapiPhoneNumberId || '',
       phone: lead.phone,
       variableValues,
@@ -242,8 +244,10 @@ export async function startSingleCall({ user, lead, agent }) {
   let providerCallId = '';
   let simulated = false;
   try {
+    // Heals agents created before Vapi was configured.
+    const assistantId = await vapi.ensureAssistant(agent);
     const res = await vapi.startCall({
-      assistantId: agent.vapiAssistantId,
+      assistantId,
       phoneNumberId: user.twilio?.vapiPhoneNumberId || '',
       phone: lead.phone,
       variableValues,

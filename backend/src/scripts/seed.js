@@ -8,6 +8,7 @@ import { User } from '../models/User.js';
 import { Agent } from '../models/Agent.js';
 import { generateScript } from '../services/gemini.service.js';
 import * as vapi from '../services/vapi.service.js';
+import { DEFAULT_VOICE } from '../config/voices.js';
 
 const DEMO_EMAIL = 'demo@leadcall.ai';
 const DEMO_PASSWORD = 'demo12345';
@@ -38,7 +39,7 @@ async function run() {
     companyName: 'BrightPixel Studio',
     serviceName: 'Website redesign',
     language: 'en-US',
-    voiceId: 'jennifer',
+    voiceId: DEFAULT_VOICE,
     callGoal: 'Book a 15-minute consultation',
     targetCustomer: 'Local restaurants and cafes',
     introduction: 'BrightPixel Studio builds modern websites for local businesses.',

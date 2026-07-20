@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VAPI_VOICES, DEFAULT_VOICE } from '../config/voices.js';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
@@ -42,7 +43,10 @@ export const agentSchema = z.object({
   companyName: z.string().max(120).optional().default(''),
   serviceName: z.string().max(120).optional().default(''),
   language: z.string().max(20).optional().default('en-US'),
-  voiceId: z.string().max(40).optional().default('jennifer'),
+  voiceId: z
+    .enum(VAPI_VOICES, { errorMap: () => ({ message: 'Choose one of the available voices' }) })
+    .optional()
+    .default(DEFAULT_VOICE),
 
   callGoal: z.string().max(400).optional().default(''),
   targetCustomer: z.string().max(400).optional().default(''),

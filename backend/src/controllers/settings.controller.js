@@ -133,20 +133,18 @@ export const syncAgents = asyncHandler(async (req, res) => {
   let synced = 0;
   const failures = [];
 
+  let lastError = '';
   for (const agent of agents) {
     try {
-      const id = await vapi.upsertAssistant(agent);
-      if (id && !/^(demo|local)-/.test(id)) {
-        agent.vapiAssistantId = id;
-        await agent.save();
-        synced += 1;
-      } else {
-        failures.push(agent.name);
-      }
-    } catch {
+      // Strict sync so real failures surface instead of silently placeholdering.
+      agent.vapiAssistantId = await vapi.syncAssistant(agent);
+      await agent.save();
+      synced += 1;
+    } catch (err) {
+      lastError = err.message;
       failures.push(agent.name);
     }
   }
 
-  res.json({ synced, total: agents.length, failures });
+  res.json({ synced, total: agents.length, failures, error: lastError || undefined });
 });
