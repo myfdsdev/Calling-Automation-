@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   Bot,
@@ -12,6 +12,7 @@ import {
   Languages,
   Target,
   MoreVertical,
+  AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -21,6 +22,7 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -128,26 +130,32 @@ function Meta({ icon: Icon, label, value }) {
 function TestAgentDialog({ agent, open, onOpenChange }) {
   const { test } = useAgentMutations();
   const [preview, setPreview] = useState(null);
+  const [error, setError] = useState('');
 
-  const runTest = () => {
-    if (!agent) return;
+  // The dialog is opened programmatically by the parent, so Radix's onOpenChange
+  // never fires with `true` — run the test off the `open` prop instead.
+  const runTest = useCallback(() => {
+    if (!agent?._id) return;
+    setPreview(null);
+    setError('');
     test.mutate(agent._id, {
       onSuccess: setPreview,
-      onError: (e) => toast.error(getErrorMessage(e, 'Could not test agent')),
+      onError: (e) => {
+        const msg = getErrorMessage(e, 'Could not test agent');
+        setError(msg);
+        toast.error(msg);
+      },
     });
-  };
+    // `test` is a fresh object each render; depending on it would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent?._id]);
+
+  useEffect(() => {
+    if (open) runTest();
+  }, [open, runTest]);
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v);
-        if (v) {
-          setPreview(null);
-          runTest();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Test agent — {agent?.name}</DialogTitle>
@@ -155,13 +163,31 @@ function TestAgentDialog({ agent, open, onOpenChange }) {
             Preview exactly what this agent will say. No real call is placed.
           </DialogDescription>
         </DialogHeader>
-        {test.isPending || !preview ? (
+        {error ? (
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+              <p className="text-red-800">{error}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={runTest}>
+              Try again
+            </Button>
+          </div>
+        ) : test.isPending || !preview ? (
           <div className="space-y-3">
             <div className="h-16 animate-pulse rounded-lg bg-muted" />
             <div className="h-28 animate-pulse rounded-lg bg-muted" />
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="primary">
+                <Mic className="h-3 w-3" /> {preview.voiceId || '—'}
+              </Badge>
+              <Badge variant="neutral">
+                <Languages className="h-3 w-3" /> {langLabel(preview.language)}
+              </Badge>
+            </div>
             <div className="rounded-lg border border-border bg-accent/40 p-3">
               <p className="text-xs font-semibold text-muted-foreground">Opening message</p>
               <p className="mt-1 text-sm text-foreground">{preview.openingMessage || '—'}</p>
