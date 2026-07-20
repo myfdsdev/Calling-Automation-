@@ -14,7 +14,23 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.clientUrl,
+      origin(origin, callback) {
+        // Same-origin / non-browser clients (curl, health checks) send no Origin.
+        if (!origin) return callback(null, true);
+
+        const clean = origin.replace(/\/$/, '');
+        if (env.clientUrls.includes(clean)) return callback(null, true);
+
+        // Outside production, always permit local dev servers on any port.
+        if (!isProd && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(clean)) {
+          return callback(null, true);
+        }
+
+        console.warn(
+          `[cors] blocked origin ${origin} — add it to CLIENT_URL (comma-separated) to allow it`,
+        );
+        return callback(null, false);
+      },
       credentials: true,
     }),
   );

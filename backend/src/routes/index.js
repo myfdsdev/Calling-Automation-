@@ -8,11 +8,19 @@ import dashboardRoutes from './dashboard.routes.js';
 import settingsRoutes from './settings.routes.js';
 import webhookRoutes from './webhook.routes.js';
 import { features } from '../config/env.js';
+import { isDbConnected } from '../config/db.js';
 
 const router = Router();
 
 router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', features });
+  // Report the database explicitly — otherwise a server with no DB looks "ok"
+  // right up until the first real request fails.
+  const dbConnected = isDbConnected();
+  res.status(dbConnected ? 200 : 503).json({
+    status: dbConnected ? 'ok' : 'degraded',
+    database: dbConnected ? 'connected' : 'disconnected',
+    features,
+  });
 });
 
 router.use('/auth', authRoutes);

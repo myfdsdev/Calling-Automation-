@@ -15,7 +15,12 @@ const toBool = (value, fallback = false) => {
 export const env = {
   port: toInt(process.env.PORT, 5000),
   nodeEnv: process.env.NODE_ENV || 'development',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  // CLIENT_URL accepts a comma-separated list so one backend can serve both a
+  // deployed frontend and local development.
+  clientUrls: (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((u) => u.trim().replace(/\/$/, ''))
+    .filter(Boolean),
   mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/leadcall_ai',
 
   jwtSecret: process.env.JWT_SECRET || 'dev-insecure-secret-change-me',

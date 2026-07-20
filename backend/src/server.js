@@ -7,7 +7,7 @@ async function bootstrap() {
   await connectDb();
 
   const app = createApp();
-  app.listen(env.port, () => {
+  const server = app.listen(env.port, () => {
     console.log(`\n  LeadCall AI API running on http://localhost:${env.port}`);
     console.log(`  Environment: ${env.nodeEnv}`);
     console.log('  Integrations:');
@@ -41,6 +41,24 @@ async function bootstrap() {
       );
     }
     console.log('');
+  });
+
+  // A busy port is a normal thing to hit in dev (an old instance still running).
+  // Explain it instead of dumping an unhandled 'error' event stack trace.
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(
+        `\n  Port ${env.port} is already in use — something else is listening there.\n\n` +
+          '  Most likely an earlier instance of this server is still running.\n' +
+          '  Fix it with either:\n' +
+          `    • Windows : netstat -ano | findstr :${env.port}    then  taskkill /F /PID <pid>\n` +
+          `    • macOS/Linux: lsof -ti:${env.port} | xargs kill -9\n` +
+          `    • Or run on another port:  PORT=5001 npm run dev\n`,
+      );
+    } else {
+      console.error('\n  Server failed to start:', err.message, '\n');
+    }
+    process.exit(1);
   });
 
   // Re-attach queue runners after the server is listening (non-blocking).

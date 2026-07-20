@@ -1,6 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
 import { isDbConnected } from '../config/db.js';
-import { isProd } from '../config/env.js';
 
 export function notFound(_req, _res, next) {
   next(ApiError.notFound('Route not found'));
@@ -33,9 +32,15 @@ export function errorHandler(err, _req, res, _next) {
     }
   }
 
+  // Log the full error server-side; never ship stack traces to clients. They leak
+  // filesystem paths and dependency internals, and NODE_ENV is easy to forget in
+  // a deploy — so this must not depend on it.
+  if ((error.statusCode || 500) >= 500) {
+    console.error('[error]', err?.stack || err);
+  }
+
   const body = { error: { message: error.message } };
   if (error.details) body.error.details = error.details;
-  if (!isProd && error.statusCode >= 500) body.error.stack = err.stack;
 
   res.status(error.statusCode || 500).json(body);
 }
