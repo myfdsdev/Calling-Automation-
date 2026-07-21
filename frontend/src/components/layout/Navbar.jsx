@@ -122,7 +122,7 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="relative text-graphite-300 hover:bg-graphite-800 hover:text-white"
+            className="relative hidden text-graphite-300 hover:bg-graphite-800 hover:text-white md:inline-flex"
             title="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -131,7 +131,7 @@ export function Navbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-graphite-800">
+              <button className="hidden items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-graphite-800 md:flex">
                 <Avatar>
                   <AvatarFallback className="bg-brand-500 text-graphite-950">
                     {initials(user?.name || 'U')}
