@@ -9,10 +9,15 @@ import {
   Trash2,
   PhoneOutgoing,
   Mic,
-  Languages,
+  Globe,
   Target,
   MoreVertical,
   AlertTriangle,
+  Ticket,
+  Utensils,
+  BedDouble,
+  Stethoscope,
+  PartyPopper,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -20,7 +25,6 @@ import { CardGridSkeleton } from '@/components/common/LoadingSkeleton';
 import { QueryError } from '@/components/common/QueryError';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -44,84 +48,133 @@ import { VOICES, LANGUAGES } from '@/lib/constants';
 const voiceLabel = (id) => VOICES.find((v) => v.id === id)?.label?.split(' (')[0] || id;
 const langLabel = (id) => LANGUAGES.find((l) => l.id === id)?.label || id;
 
-function AgentCard({ agent, onEdit, onTest, onToggle, onDelete }) {
+/**
+ * Derive a category icon + soft color from the agent's own data (name / service /
+ * goal). Keeps everything dynamic — no hardcoded per-agent values. Defaults to the
+ * app's amber accent so most agents stay on the Graphite + Amber theme.
+ */
+const CATEGORY_VISUALS = [
+  { test: /ticket|book|reserv/i, icon: Ticket, bg: '#FFF4DD', fg: '#E58A00' },
+  { test: /restaurant|food|cafe|caf[eé]|diner|dining|kitchen|menu/i, icon: Utensils, bg: '#FCE8EF', fg: '#D6336C' },
+  { test: /hotel|stay|room|resort|lodg|hospitality/i, icon: BedDouble, bg: '#E7F3FC', fg: '#1683C7' },
+  { test: /doctor|clinic|health|medical|dental|dentist|patient|care/i, icon: Stethoscope, bg: '#E3F7F3', fg: '#109486' },
+  { test: /event|wedding|party|venue|celebrat/i, icon: PartyPopper, bg: '#F2E8FC', fg: '#8B43C6' },
+];
+function agentVisual(agent) {
+  const hay = `${agent.name || ''} ${agent.serviceName || ''} ${agent.callGoal || ''}`;
   return (
-    <Card className="flex flex-col">
-      <CardContent className="flex flex-1 flex-col gap-4 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <Bot className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-foreground">{agent.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{agent.companyName || '—'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <StatusBadge type="agent" value={agent.status} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(agent)}>
-                  <Pencil className="h-4 w-4" /> Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onTest(agent)}>
-                  <Play className="h-4 w-4" /> Test Agent
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onToggle(agent)}>
-                  <Power className="h-4 w-4" />
-                  {agent.status === 'active' ? 'Deactivate' : 'Activate'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDelete(agent)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <Meta icon={Mic} label="Voice" value={voiceLabel(agent.voiceId)} />
-          <Meta icon={Languages} label="Language" value={langLabel(agent.language)} />
-          <Meta icon={Target} label="Service" value={agent.serviceName || '—'} />
-          <Meta icon={PhoneOutgoing} label="Calls made" value={agent.totalCalls || 0} />
-        </div>
-
-        {agent.callGoal ? (
-          <div className="rounded-lg bg-secondary/60 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Call goal</p>
-            <p className="mt-0.5 line-clamp-2 text-sm text-foreground">{agent.callGoal}</p>
-          </div>
-        ) : null}
-
-        <div className="mt-auto flex gap-2 pt-1">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(agent)}>
-            <Pencil className="h-4 w-4" /> Edit
-          </Button>
-          <Button variant="secondary" size="sm" className="flex-1" onClick={() => onTest(agent)}>
-            <Play className="h-4 w-4" /> Test
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    CATEGORY_VISUALS.find((c) => c.test.test(hay)) || {
+      icon: Bot,
+      bg: '#FFF4DD',
+      fg: '#E58A00',
+    }
   );
 }
 
-function Meta({ icon: Icon, label, value }) {
+/** Compact metadata chip. `label` is muted, `value` is emphasized. */
+function Chip({ icon: Icon, label, value, title }) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="truncate text-sm font-medium text-foreground">{value}</p>
+    <span
+      title={title}
+      className="inline-flex h-10 max-w-full items-center gap-2 rounded-[9px] border border-border bg-card px-[13px] text-[13px] text-graphite-600"
+    >
+      <Icon className="h-[17px] w-[17px] flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span className="truncate">
+        {label ? <span>{label} </span> : null}
+        <span className="font-semibold text-foreground">{value}</span>
+      </span>
+    </span>
+  );
+}
+
+function AgentCard({ agent, onEdit, onTest, onToggle, onDelete }) {
+  const visual = agentVisual(agent);
+  const Icon = visual.icon;
+  const subtitle = agent.companyName || 'AI calling agent';
+
+  return (
+    <div className="group flex min-h-[350px] flex-col rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-graphite-300 hover:shadow-[0_12px_30px_rgba(15,23,42,0.10)] sm:p-6">
+      {/* 1. Header */}
+      <div className="flex items-start justify-between">
+        <span
+          className="flex h-[60px] w-[60px] items-center justify-center rounded-2xl sm:h-[72px] sm:w-[72px]"
+          style={{ backgroundColor: visual.bg }}
+        >
+          <Icon className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: visual.fg }} aria-hidden="true" />
+        </span>
+        <div className="flex items-center gap-2">
+          <StatusBadge type="agent" value={agent.status} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg text-graphite-500 hover:bg-graphite-100 hover:text-foreground"
+                aria-label={`Options for ${agent.name}`}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(agent)}>
+                <Pencil className="h-4 w-4" /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onTest(agent)}>
+                <Play className="h-4 w-4" /> Test Agent
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggle(agent)}>
+                <Power className="h-4 w-4" />
+                {agent.status === 'active' ? 'Deactivate' : 'Activate'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDelete(agent)}
+                className="text-danger-500 focus:bg-danger-50 focus:text-danger-500"
+              >
+                <Trash2 className="h-4 w-4" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* 2. Title */}
+      <p className="mt-[22px] text-[13px] text-muted-foreground">{subtitle}</p>
+      <h3 className="mt-1 line-clamp-2 min-h-[52px] text-[20px] font-bold leading-[1.25] tracking-[-0.02em] text-foreground sm:min-h-[58px] sm:text-[23px]">
+        {agent.name}
+      </h3>
+
+      {/* 3. Metadata chips */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Chip icon={Mic} label="Voice:" value={voiceLabel(agent.voiceId)} />
+        <Chip icon={Globe} value={langLabel(agent.language)} />
+        {agent.serviceName ? (
+          <Chip icon={Target} label="Service:" value={agent.serviceName} title={agent.serviceName} />
+        ) : null}
+      </div>
+
+      {/* 4. Flexible space (keeps footers bottom-aligned) */}
+      <div className="min-h-[26px] flex-grow" />
+
+      {/* 5. Footer */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+            <PhoneOutgoing className="h-4 w-4" aria-hidden="true" /> Calls Made
+          </div>
+          <p className="mt-1 text-[18px] font-bold text-foreground">{agent.totalCalls || 0}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => onEdit(agent)}
+            className="text-graphite-600 hover:bg-graphite-100 hover:text-foreground"
+          >
+            <Pencil className="h-4 w-4" /> Edit
+          </Button>
+          <Button onClick={() => onTest(agent)}>
+            <Play className="h-4 w-4 text-brand-500" /> Test
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -185,7 +238,7 @@ function TestAgentDialog({ agent, open, onOpenChange }) {
                 <Mic className="h-3 w-3" /> {preview.voiceId || '—'}
               </Badge>
               <Badge variant="neutral">
-                <Languages className="h-3 w-3" /> {langLabel(preview.language)}
+                <Globe className="h-3 w-3" /> {langLabel(preview.language)}
               </Badge>
             </div>
             <div className="rounded-lg border border-border bg-accent/40 p-3">
@@ -264,7 +317,7 @@ export default function Agents() {
       ) : isError ? (
         <QueryError onRetry={refetch} message="Unable to load agents" />
       ) : agents?.length ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 lg:gap-6 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
           {agents.map((agent) => (
             <AgentCard
               key={agent._id}

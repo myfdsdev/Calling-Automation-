@@ -11,6 +11,7 @@ import Leads from '@/pages/Leads';
 import Calls from '@/pages/Calls';
 import Account from '@/pages/Account';
 import ApiSettings from '@/pages/ApiSettings';
+import Plans from '@/pages/Plans';
 import NotFound from '@/pages/NotFound';
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/calls" element={<Calls />} />
         <Route path="/account" element={<Account />} />
         <Route path="/api-settings" element={<ApiSettings />} />
+        <Route path="/plans" element={<Plans />} />
       </Route>
 
       <Route path="/404" element={<NotFound />} />

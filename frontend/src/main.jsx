@@ -13,6 +13,13 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 15_000,
+      // Always attempt requests instead of pausing when the browser reports
+      // itself offline — navigator.onLine is unreliable behind some proxies/VPNs
+      // and would otherwise leave data pages stuck with no error and no data.
+      networkMode: 'always',
+    },
+    mutations: {
+      networkMode: 'always',
     },
   },
 });

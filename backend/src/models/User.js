@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { env } from '../config/env.js';
 import { mask } from '../utils/crypto.js';
+import { getPlan } from '../config/plans.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,6 +19,10 @@ const userSchema = new mongoose.Schema(
     companyName: { type: String, trim: true, default: '' },
     leadCredits: { type: Number, default: env.defaults.leadCredits },
     callingMinutes: { type: Number, default: env.defaults.callingMinutes },
+
+    // Subscription tier (see backend/src/config/plans.js). Free by default.
+    plan: { type: String, default: 'free' },
+    planActivatedAt: { type: Date, default: null },
 
     // The user's own Twilio account, connected from API Settings.
     twilio: {
@@ -49,6 +54,7 @@ userSchema.methods.canCall = function canCall() {
 };
 
 userSchema.methods.toSafeJSON = function toSafeJSON() {
+  const plan = getPlan(this.plan);
   return {
     id: this._id,
     name: this.name,
@@ -56,6 +62,8 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     companyName: this.companyName,
     leadCredits: this.leadCredits,
     callingMinutes: this.callingMinutes,
+    plan: { id: plan.id, name: plan.name, maxAgents: plan.maxAgents },
+    planActivatedAt: this.planActivatedAt,
     createdAt: this.createdAt,
     // Connection state only — never the credentials themselves.
     telephony: {

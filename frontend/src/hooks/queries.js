@@ -1,6 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
+/* ----------------------------- Plans ----------------------------- */
+export function usePlans() {
+  return useQuery({
+    queryKey: ['plans'],
+    queryFn: async () => (await api.get('/plans')).data,
+    // The plan catalog is static server-side, so ride out transient blips
+    // (e.g. a backend restart in dev) with a few spaced retries.
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+  });
+}
+export function useSubscribe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planId) => (await api.post(`/plans/${planId}/subscribe`)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plans'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
 /* --------------------------- Dashboard --------------------------- */
 export function useDashboardStats() {
   return useQuery({

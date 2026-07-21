@@ -4,6 +4,7 @@ import { Agent } from '../models/Agent.js';
 import { Lead } from '../models/Lead.js';
 import * as vapi from '../services/vapi.service.js';
 import { generateScript } from '../services/gemini.service.js';
+import { assertAgentQuota } from './plan.controller.js';
 
 export const listAgents = asyncHandler(async (req, res) => {
   const agents = await Agent.find({ userId: req.user._id }).sort({ createdAt: -1 });
@@ -17,6 +18,9 @@ export const getAgent = asyncHandler(async (req, res) => {
 });
 
 export const createAgent = asyncHandler(async (req, res) => {
+  // Enforce the plan's agent limit before creating.
+  await assertAgentQuota(req.user);
+
   const agent = await Agent.create({
     ...req.body,
     userId: req.user._id,
