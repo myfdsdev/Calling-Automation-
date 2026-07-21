@@ -13,7 +13,6 @@ import {
   User,
   Settings,
   LogOut,
-  ChevronDown,
   Sparkles,
 } from 'lucide-react';
 import {
@@ -137,7 +136,6 @@ export function Navbar() {
                     {initials(user?.name || 'U')}
                   </AvatarFallback>
                 </Avatar>
-                <ChevronDown className="hidden h-4 w-4 text-graphite-400 sm:block" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
