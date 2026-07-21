@@ -39,15 +39,15 @@ import { getErrorMessage } from '@/lib/api';
 function AutomationFailed({ automation }) {
   if (automation?.status !== 'failed' || !automation.lastError) return null;
   return (
-    <Card className="border-red-200 bg-red-50/60">
+    <Card className="border-danger-200 bg-danger-50/60">
       <CardContent className="flex items-start gap-3 p-4">
-        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-danger-500" />
         <div className="space-y-1 text-sm">
-          <p className="font-medium text-red-900">
+          <p className="font-medium text-danger-800">
             Automation stopped — no calls were placed
           </p>
-          <p className="text-red-800">{automation.lastError}</p>
-          <p className="text-red-700">
+          <p className="text-danger-700">{automation.lastError}</p>
+          <p className="text-danger-700">
             Your leads were returned to “Selected”. Fix the setup in{' '}
             <Link to="/api-settings" className="font-medium underline">
               API Settings

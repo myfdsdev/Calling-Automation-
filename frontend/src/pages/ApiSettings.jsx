@@ -80,12 +80,12 @@ export default function ApiSettings() {
       </Card>
 
       {features.demoMode ? (
-        <Card className="border-amber-200 bg-amber-50/60">
+        <Card className="border-brand-200 bg-brand-100/60">
           <CardContent className="flex items-start gap-3 p-4">
-            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-600" />
             <div className="space-y-1 text-sm">
-              <p className="font-medium text-amber-900">Demo mode is ON</p>
-              <p className="text-amber-800">
+              <p className="font-medium text-brand-800">Demo mode is ON</p>
+              <p className="text-brand-700">
                 Calls are simulated with fabricated transcripts — nothing is actually dialed.
               </p>
             </div>

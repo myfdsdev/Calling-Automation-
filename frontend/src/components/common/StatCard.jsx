@@ -3,11 +3,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const TONES = {
-  primary: 'bg-accent text-accent-foreground',
-  success: 'bg-emerald-50 text-emerald-600',
-  info: 'bg-blue-50 text-blue-600',
-  warning: 'bg-amber-50 text-amber-600',
-  neutral: 'bg-secondary text-secondary-foreground',
+  primary: 'bg-brand-100 text-brand-600',
+  success: 'bg-success-50 text-success-500',
+  info: 'bg-info-50 text-info-500',
+  warning: 'bg-brand-100 text-brand-600',
+  neutral: 'bg-graphite-100 text-graphite-500',
 };
 
 export function StatCard({ icon: Icon, label, value, hint, tone = 'primary', loading }) {
@@ -19,7 +19,7 @@ export function StatCard({ icon: Icon, label, value, hint, tone = 'primary', loa
           {loading ? (
             <Skeleton className="h-8 w-16" />
           ) : (
-            <p className="text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+            <p className="text-[28px] font-bold leading-tight tracking-tight text-foreground">{value}</p>
           )}
           {hint ? <p className="truncate text-xs text-muted-foreground">{hint}</p> : null}
         </div>

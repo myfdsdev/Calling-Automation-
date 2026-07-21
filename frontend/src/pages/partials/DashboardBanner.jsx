@@ -1,35 +1,56 @@
 import { Link } from 'react-router-dom';
-import { PhoneCall, Plus, Sparkles, Building2, TrendingUp } from 'lucide-react';
+import { PhoneCall, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Deterministic pseudo-waveform: two out-of-phase sines read as organic speech
+// without needing a hand-written array. Percentage heights so bars scale with
+// the panel rather than being fixed px.
+const BARS = Array.from({ length: 52 }, (_, i) => {
+  const v = Math.abs(Math.sin(i * 0.7) * 0.62 + Math.sin(i * 1.31) * 0.38);
+  return 14 + Math.round(v * 72);
+});
+
 function Waveform() {
-  const bars = [10, 22, 34, 20, 44, 30, 52, 26, 40, 18, 34, 24, 46, 28, 14];
   return (
-    <div className="flex h-14 items-center gap-1">
-      {bars.map((h, i) => (
-        <span
-          key={i}
-          className="w-1.5 rounded-full bg-primary/70"
-          style={{
-            height: `${h}px`,
-            animation: `pulse-ring 1.6s ease-in-out ${i * 0.08}s infinite alternate`,
-          }}
-        />
-      ))}
+    // Animated amber equalizer waveform.
+    <div className="flex h-full w-full items-center justify-between">
+      {BARS.map((h, i) => {
+        // Vary duration per bar and stagger with a negative delay so they start
+        // mid-cycle — no synchronized "all bars rise together" moment.
+        const duration = 0.9 + (i % 6) * 0.13; // 0.90s – 1.55s
+        const delay = -(i % 9) * 0.12; // staggered head-start
+        return (
+          <span
+            key={i}
+            className="wave-bar w-[2px] origin-center rounded-full bg-brand-500/70"
+            style={{
+              height: `${h}%`,
+              animation: `wave-bar ${duration}s ease-in-out ${delay}s infinite`,
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
 
 export function DashboardBanner() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-accent via-card to-card p-6 sm:p-8">
+    // White hero card with a subtle amber radial glow on the right (spec).
+    <div
+      className="rounded-panel border border-border bg-card p-6 shadow-card sm:p-8"
+      style={{
+        backgroundImage:
+          'radial-gradient(circle at 78% 50%, rgba(245, 158, 11, 0.07), transparent 38%)',
+      }}
+    >
       <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_1fr]">
-        {/* Text */}
+        {/* Copy + actions */}
         <div className="space-y-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">
             <Sparkles className="h-3.5 w-3.5" /> AI-powered outbound calling
           </span>
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
+          <h1 className="text-[28px] font-bold leading-tight tracking-[-0.03em] text-foreground sm:text-[36px]">
             Find Leads. Let Your AI Agent Call Them.
           </h1>
           <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
@@ -39,7 +60,7 @@ export function DashboardBanner() {
           <div className="flex flex-wrap gap-3 pt-1">
             <Button asChild size="lg">
               <Link to="/lead-finder">
-                <PhoneCall className="h-4 w-4" /> Start New Automation
+                <PhoneCall className="h-4 w-4 text-brand-500" /> Start New Automation
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
@@ -50,42 +71,9 @@ export function DashboardBanner() {
           </div>
         </div>
 
-        {/* Visual */}
-        <div className="relative hidden h-52 lg:block">
-          {/* Central phone card */}
-          <div className="absolute left-1/2 top-1/2 flex w-56 -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-lg">
-            <div className="flex items-center gap-3">
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <PhoneCall className="h-5 w-5" />
-                <span className="absolute inset-0 rounded-full bg-primary/40 animate-pulse-ring" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-foreground">Calling…</p>
-                <p className="text-xs text-muted-foreground">Riley — Web Redesign</p>
-              </div>
-            </div>
-            <Waveform />
-          </div>
-
-          {/* Floating lead cards */}
-          <div className="absolute -left-2 top-2 flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-md">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <div className="text-xs">
-              <p className="font-medium text-foreground">Coastal Cafe</p>
-              <p className="text-emerald-600">Interested</p>
-            </div>
-          </div>
-          <div className="absolute -right-2 bottom-2 flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-md">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <TrendingUp className="h-4 w-4" />
-            </span>
-            <div className="text-xs">
-              <p className="font-medium text-foreground">Score 92</p>
-              <p className="text-muted-foreground">Summit Group</p>
-            </div>
-          </div>
+        {/* Waveform visual */}
+        <div className="hidden h-40 lg:block">
+          <Waveform />
         </div>
       </div>
     </div>

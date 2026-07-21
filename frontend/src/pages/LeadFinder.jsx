@@ -195,11 +195,11 @@ export default function LeadFinder() {
       />
 
       {noAgents ? (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="flex items-center gap-3 p-4 text-sm text-amber-800">
+        <Card className="border-brand-200 bg-brand-100/60">
+          <CardContent className="flex items-center gap-3 p-4 text-sm text-brand-700">
             <Sparkles className="h-4 w-4 flex-shrink-0" />
             You need an active agent before starting an automation.{' '}
-            <Button variant="link" className="h-auto p-0 text-amber-900" onClick={() => navigate('/agents')}>
+            <Button variant="link" className="h-auto p-0 text-brand-700 underline" onClick={() => navigate('/agents')}>
               Create one →
             </Button>
           </CardContent>
@@ -319,14 +319,14 @@ export default function LeadFinder() {
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center gap-1 text-muted-foreground">
-                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          <Star className="h-3.5 w-3.5 fill-brand-400 text-brand-400" />
                           {lead.rating || '—'}
                         </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{lead.reviewCount ?? 0}</TableCell>
                       <TableCell>
                         {lead.website ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-600"><Globe className="h-3.5 w-3.5" /> Yes</span>
+                          <span className="inline-flex items-center gap-1 text-success-500"><Globe className="h-3.5 w-3.5" /> Yes</span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -452,7 +452,7 @@ function ToggleField({ control, name, label }) {
 
 function ScorePill({ score = 0 }) {
   const tone =
-    score >= 70 ? 'bg-emerald-50 text-emerald-700' : score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-secondary text-secondary-foreground';
+    score >= 70 ? 'bg-success-50 text-success-700' : score >= 40 ? 'bg-brand-100 text-brand-700' : 'bg-graphite-100 text-graphite-600';
   return <span className={cn('rounded-md px-2 py-0.5 text-xs font-semibold', tone)}>{score}</span>;
 }
 

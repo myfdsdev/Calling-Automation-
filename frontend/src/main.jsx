@@ -23,7 +23,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <AuthProvider>
           <App />
-          <Toaster richColors position="top-right" closeButton />
+          <Toaster
+            position="top-right"
+            closeButton
+            toastOptions={{
+              style: { fontFamily: 'Inter, sans-serif', borderRadius: '12px' },
+            }}
+          />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

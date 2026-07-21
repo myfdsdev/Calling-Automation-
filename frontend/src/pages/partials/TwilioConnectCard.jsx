@@ -35,7 +35,7 @@ function Check({ ok, children }) {
   return (
     <li className="flex items-start gap-2 text-sm">
       {ok ? (
-        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-success-500" />
       ) : (
         <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
       )}
@@ -202,9 +202,9 @@ export function TwilioConnectCard() {
         ) : (
           <>
             {!t?.platformReady && !isLoading ? (
-              <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-                <p className="text-amber-800">
+              <div className="flex items-start gap-3 rounded-lg border border-brand-200 bg-brand-100 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" />
+                <p className="text-brand-700">
                   The calling service isn&apos;t available right now, so connecting won&apos;t
                   enable calls yet.
                 </p>

@@ -18,7 +18,7 @@ import { formatDate, cn } from '@/lib/utils';
 
 function ScorePill({ score = 0 }) {
   const tone =
-    score >= 70 ? 'bg-emerald-50 text-emerald-700' : score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-secondary text-secondary-foreground';
+    score >= 70 ? 'bg-success-50 text-success-700' : score >= 40 ? 'bg-brand-100 text-brand-700' : 'bg-graphite-100 text-graphite-600';
   return <span className={cn('rounded-md px-2 py-0.5 text-xs font-semibold', tone)}>{score}</span>;
 }
 

@@ -52,9 +52,9 @@ export function CallDetailsModal({ callId, open, onOpenChange }) {
             </DialogHeader>
 
             {call.simulated ? (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-                <p className="text-amber-800">
+              <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-100 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" />
+                <p className="text-brand-700">
                   <span className="font-medium">Simulated call.</span> This was generated locally in
                   demo mode — the transcript and outcome are fabricated and no number was dialed.
                 </p>
@@ -62,9 +62,9 @@ export function CallDetailsModal({ callId, open, onOpenChange }) {
             ) : null}
 
             {call.failureReason ? (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
-                <p className="text-red-800">
+              <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-danger-500" />
+                <p className="text-danger-700">
                   <span className="font-medium">Call could not be placed.</span>{' '}
                   {call.failureReason}
                 </p>

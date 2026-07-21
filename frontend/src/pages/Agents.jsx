@@ -165,9 +165,9 @@ function TestAgentDialog({ agent, open, onOpenChange }) {
         </DialogHeader>
         {error ? (
           <div className="space-y-3">
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
-              <p className="text-red-800">{error}</p>
+            <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-danger-500" />
+              <p className="text-danger-700">{error}</p>
             </div>
             <Button variant="outline" size="sm" onClick={runTest}>
               Try again
