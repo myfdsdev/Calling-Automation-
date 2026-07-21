@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     passwordHash: { type: String, required: true, select: false },
+    googleId: { type: String, unique: true, sparse: true, trim: true },
     companyName: { type: String, trim: true, default: '' },
     leadCredits: { type: Number, default: env.defaults.leadCredits },
     callingMinutes: { type: Number, default: env.defaults.callingMinutes },

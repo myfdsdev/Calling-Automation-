@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/lib/api';
 import { AuthShell } from '@/pages/partials/AuthShell';
+import { GoogleAuthButton } from '@/components/common/GoogleAuthButton';
 
 const schema = z.object({
   name: z.string().min(2, 'Enter your full name'),
@@ -20,13 +21,15 @@ const schema = z.object({
 });
 
 export default function Register() {
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, googleAuth } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
@@ -45,6 +48,22 @@ export default function Register() {
       setSubmitting(false);
     }
   };
+
+  const onGoogleCredential = useCallback(
+    async (credential) => {
+      setGoogleSubmitting(true);
+      try {
+        await googleAuth({ credential, companyName: getValues('companyName') || '' });
+        toast.success('Account ready - welcome to LeadCall AI!');
+        navigate('/', { replace: true });
+      } catch (err) {
+        toast.error(getErrorMessage(err, 'Could not continue with Google'));
+      } finally {
+        setGoogleSubmitting(false);
+      }
+    },
+    [getValues, googleAuth, navigate],
+  );
 
   return (
     <AuthShell title="Create your account" subtitle="Start finding leads and calling them in minutes.">
@@ -78,6 +97,19 @@ export default function Register() {
           Create account
         </Button>
       </form>
+
+      <div className="my-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs font-medium uppercase text-muted-foreground">or</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <GoogleAuthButton
+        text="signup_with"
+        disabled={submitting || googleSubmitting}
+        onCredential={onGoogleCredential}
+      />
+
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{' '}
         <Link to="/login" className="font-medium text-primary hover:underline">

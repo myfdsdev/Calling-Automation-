@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { User } from '../models/User.js';
 import { signToken } from '../middleware/auth.js';
+import { verifyGoogleIdToken } from '../services/googleAuth.service.js';
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, companyName } = req.body;
@@ -27,6 +29,38 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = signToken(user._id);
   res.json({ token, user: user.toSafeJSON() });
+});
+
+export const googleAuth = asyncHandler(async (req, res) => {
+  const { credential, companyName } = req.body;
+  const profile = await verifyGoogleIdToken(credential);
+
+  let user = await User.findOne({
+    $or: [{ googleId: profile.googleId }, { email: profile.email }],
+  });
+
+  let status = 200;
+  if (user) {
+    if (user.googleId && user.googleId !== profile.googleId) {
+      throw ApiError.conflict('This email is already linked to another Google account');
+    }
+    if (!user.googleId) user.googleId = profile.googleId;
+    if (!user.name) user.name = profile.name;
+    await user.save();
+  } else {
+    const passwordHash = await User.hashPassword(crypto.randomUUID());
+    user = await User.create({
+      name: profile.name,
+      email: profile.email,
+      googleId: profile.googleId,
+      companyName,
+      passwordHash,
+    });
+    status = 201;
+  }
+
+  const token = signToken(user._id);
+  res.status(status).json({ token, user: user.toSafeJSON() });
 });
 
 export const me = asyncHandler(async (req, res) => {

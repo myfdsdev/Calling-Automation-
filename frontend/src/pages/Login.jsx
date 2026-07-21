@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/lib/api';
 import { AuthShell } from '@/pages/partials/AuthShell';
+import { GoogleAuthButton } from '@/components/common/GoogleAuthButton';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -18,10 +19,11 @@ const schema = z.object({
 });
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, googleAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   const {
     register,
@@ -41,6 +43,22 @@ export default function Login() {
       setSubmitting(false);
     }
   };
+
+  const onGoogleCredential = useCallback(
+    async (credential) => {
+      setGoogleSubmitting(true);
+      try {
+        await googleAuth({ credential });
+        toast.success('Welcome back!');
+        navigate(location.state?.from?.pathname || '/', { replace: true });
+      } catch (err) {
+        toast.error(getErrorMessage(err, 'Could not sign in with Google'));
+      } finally {
+        setGoogleSubmitting(false);
+      }
+    },
+    [googleAuth, location.state?.from?.pathname, navigate],
+  );
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to your LeadCall AI workspace.">
@@ -62,6 +80,19 @@ export default function Login() {
           Sign in
         </Button>
       </form>
+
+      <div className="my-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs font-medium uppercase text-muted-foreground">or</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <GoogleAuthButton
+        text="signin_with"
+        disabled={submitting || googleSubmitting}
+        onCredential={onGoogleCredential}
+      />
+
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{' '}
         <Link to="/register" className="font-medium text-primary hover:underline">

@@ -16,6 +16,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const googleAuthSchema = z.object({
+  credential: z.string().min(20, 'Google sign-in token is required'),
+  companyName: z.string().max(120).optional().default(''),
+});
+
 /* ---------------- Telephony (user's own Twilio) ---------------- */
 export const twilioConnectSchema = z.object({
   accountSid: z
