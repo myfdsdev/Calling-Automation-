@@ -6,7 +6,6 @@ import {
   Search,
   Users,
   PhoneCall,
-  Bell,
   Menu,
   Coins,
   Timer,
@@ -117,16 +116,6 @@ export function Navbar() {
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <CreditPills user={user} />
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative hidden text-graphite-300 hover:bg-graphite-800 hover:text-white md:inline-flex"
-            title="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-500" />
-          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
