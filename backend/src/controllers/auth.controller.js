@@ -4,6 +4,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { User } from '../models/User.js';
 import { signToken } from '../middleware/auth.js';
 import { verifyGoogleIdToken } from '../services/googleAuth.service.js';
+import { env } from '../config/env.js';
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, companyName } = req.body;
@@ -61,6 +62,13 @@ export const googleAuth = asyncHandler(async (req, res) => {
 
   const token = signToken(user._id);
   res.status(status).json({ token, user: user.toSafeJSON() });
+});
+
+export const googleConfig = asyncHandler(async (_req, res) => {
+  res.json({
+    enabled: Boolean(env.google.clientId),
+    clientId: env.google.clientId,
+  });
 });
 
 export const me = asyncHandler(async (req, res) => {

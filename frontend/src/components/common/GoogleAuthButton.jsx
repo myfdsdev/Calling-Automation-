@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 
 const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
@@ -57,9 +58,40 @@ function GoogleMark() {
 export function GoogleAuthButton({ text = 'signin_with', disabled = false, onCredential }) {
   const containerRef = useRef(null);
   const [scriptState, setScriptState] = useState('loading');
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const [clientId, setClientId] = useState(import.meta.env.VITE_GOOGLE_CLIENT_ID || '');
+  const [clientIdResolved, setClientIdResolved] = useState(
+    Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID),
+  );
 
   useEffect(() => {
+    if (clientId) return undefined;
+
+    let active = true;
+    setScriptState('loading');
+
+    api
+      .get('/auth/google/config')
+      .then(({ data }) => {
+        if (!active) return;
+        setClientId(data?.clientId || '');
+        setClientIdResolved(true);
+        if (!data?.clientId) setScriptState('missing');
+      })
+      .catch(() => {
+        if (active) {
+          setClientIdResolved(true);
+          setScriptState('missing');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [clientId]);
+
+  useEffect(() => {
+    if (!clientIdResolved) return undefined;
+
     if (!clientId) {
       setScriptState('missing');
       return undefined;
@@ -97,7 +129,7 @@ export function GoogleAuthButton({ text = 'signin_with', disabled = false, onCre
     return () => {
       active = false;
     };
-  }, [clientId, onCredential, text]);
+  }, [clientId, clientIdResolved, onCredential, text]);
 
   const unavailable = scriptState === 'missing' || scriptState === 'failed';
 
