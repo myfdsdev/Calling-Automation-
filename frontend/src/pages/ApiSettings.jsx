@@ -64,11 +64,13 @@ export default function ApiSettings() {
       <PageHeader title="API Settings" description="Integration status for your calling stack." />
 
       <Card className="border-primary/20 bg-accent/20">
-        <CardContent className="flex items-start gap-3 p-4">
-          <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-          <div className="space-y-1 text-sm">
-            <p className="font-medium text-foreground">How your credentials are handled</p>
-            <p className="text-muted-foreground">
+        <CardContent className="grid grid-cols-[24px_1fr] gap-3 p-4">
+          <span className="flex h-6 w-6 items-start justify-center pt-0.5 text-primary">
+            <ShieldCheck className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 space-y-1 text-sm">
+            <p className="font-medium leading-5 text-foreground">How your credentials are handled</p>
+            <p className="max-w-6xl leading-5 text-muted-foreground">
               Your Twilio Auth Token is encrypted before it&apos;s stored and is never sent back to
               the browser — you&apos;ll only ever see the last few characters of your Account SID.
               Platform keys (Gemini, SerpAPI, voice calling) live in the server&apos;s{' '}
