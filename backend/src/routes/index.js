@@ -7,6 +7,7 @@ import callRoutes from './call.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import settingsRoutes from './settings.routes.js';
 import planRoutes from './plan.routes.js';
+import workspaceRoutes from './workspace.routes.js';
 import webhookRoutes from './webhook.routes.js';
 import { features } from '../config/env.js';
 import { isDbConnected } from '../config/db.js';
@@ -32,6 +33,7 @@ router.use('/calls', callRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/plans', planRoutes);
+router.use('/workspace', workspaceRoutes);
 router.use('/webhooks', webhookRoutes);
 
 export default router;

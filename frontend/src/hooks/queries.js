@@ -1,6 +1,40 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
+/* --------------------------- Workspace --------------------------- */
+export function useWorkspace() {
+  return useQuery({
+    queryKey: ['workspace'],
+    queryFn: async () => (await api.get('/workspace')).data,
+  });
+}
+export function useWorkspaceMutations() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['workspace'] });
+  const invite = useMutation({
+    mutationFn: async (payload) => (await api.post('/workspace/invites', payload)).data,
+    onSuccess: invalidate,
+  });
+  const revokeInvite = useMutation({
+    mutationFn: async (id) => (await api.delete(`/workspace/invites/${id}`)).data,
+    onSuccess: invalidate,
+  });
+  const changeRole = useMutation({
+    mutationFn: async ({ userId, role }) =>
+      (await api.patch(`/workspace/members/${userId}`, { role })).data,
+    onSuccess: invalidate,
+  });
+  const removeMember = useMutation({
+    mutationFn: async (userId) => (await api.delete(`/workspace/members/${userId}`)).data,
+    onSuccess: invalidate,
+  });
+  const rename = useMutation({
+    mutationFn: async (name) => (await api.patch('/workspace', { name })).data,
+    onSuccess: invalidate,
+  });
+  return { invite, revokeInvite, changeRole, removeMember, rename };
+}
+
 /* ----------------------------- Plans ----------------------------- */
 export function usePlans() {
   return useQuery({

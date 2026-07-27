@@ -21,6 +21,21 @@ export const googleAuthSchema = z.object({
   companyName: z.string().max(120).optional().default(''),
 });
 
+/* ---------------- Workspace / team ---------------- */
+export const inviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+  role: z.enum(['admin', 'member']).optional().default('member'),
+});
+export const acceptInviteSchema = z.object({
+  token: z.string().min(10, 'Invalid invite token'),
+});
+export const changeRoleSchema = z.object({
+  role: z.enum(['admin', 'member']),
+});
+export const renameWorkspaceSchema = z.object({
+  name: z.string().trim().min(2, 'Workspace name is too short').max(80),
+});
+
 /* ---------------- Telephony (user's own Twilio) ---------------- */
 export const twilioConnectSchema = z.object({
   accountSid: z

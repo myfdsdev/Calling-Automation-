@@ -6,6 +6,7 @@ import { User } from '../models/User.js';
 import * as vapi from './vapi.service.js';
 import { analyzeCall } from './gemini.service.js';
 import { isDbConnected } from '../config/db.js';
+import { getBillingAccount } from './workspace.service.js';
 
 /**
  * In-memory sequential calling engine. One lead is called at a time per automation.
@@ -350,10 +351,14 @@ export async function applyCallResult({
     await lead.save();
   }
 
-  // Consume calling minutes from the account.
+  // Consume calling minutes from the workspace owner (members spend the owner's pool).
   if (duration > 0) {
     const minutes = Math.max(1, Math.ceil(duration / 60));
-    await User.findByIdAndUpdate(call.userId, { $inc: { callingMinutes: -minutes } });
+    const caller = await User.findById(call.userId);
+    const billing = caller ? await getBillingAccount(caller) : null;
+    if (billing) {
+      await User.findByIdAndUpdate(billing._id, { $inc: { callingMinutes: -minutes } });
+    }
   }
 }
 

@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema(
     plan: { type: String, default: 'free' },
     planActivatedAt: { type: Date, default: null },
 
+    // Workspace membership. Owner of their own workspace by default; members are
+    // moved into someone else's workspace when they accept an invite. Credits &
+    // plan are billed to the workspace owner; data stays isolated per user.
+    workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace', default: null },
+    workspaceRole: { type: String, enum: ['owner', 'admin', 'member'], default: 'owner' },
+
     // The user's own Twilio account, connected from API Settings.
     twilio: {
       accountSid: { type: String, default: '' },

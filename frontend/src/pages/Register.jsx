@@ -41,7 +41,9 @@ export default function Register() {
     try {
       await registerUser(values);
       toast.success('Account created — welcome to LeadCall AI!');
-      navigate('/', { replace: true });
+      navigate(localStorage.getItem('pendingInviteToken') ? '/accept-invite' : '/', {
+        replace: true,
+      });
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not create your account'));
     } finally {
@@ -55,7 +57,9 @@ export default function Register() {
       try {
         await googleAuth({ credential, companyName: getValues('companyName') || '' });
         toast.success('Account ready - welcome to LeadCall AI!');
-        navigate('/', { replace: true });
+        navigate(localStorage.getItem('pendingInviteToken') ? '/accept-invite' : '/', {
+        replace: true,
+      });
       } catch (err) {
         toast.error(getErrorMessage(err, 'Could not continue with Google'));
       } finally {

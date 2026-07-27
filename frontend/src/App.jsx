@@ -12,6 +12,8 @@ import Calls from '@/pages/Calls';
 import Account from '@/pages/Account';
 import ApiSettings from '@/pages/ApiSettings';
 import Plans from '@/pages/Plans';
+import Workspace from '@/pages/Workspace';
+import AcceptInvite from '@/pages/AcceptInvite';
 import NotFound from '@/pages/NotFound';
 
 export default function App() {
@@ -19,6 +21,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/accept-invite" element={<AcceptInvite />} />
 
       <Route
         element={
@@ -35,6 +38,7 @@ export default function App() {
         <Route path="/account" element={<Account />} />
         <Route path="/api-settings" element={<ApiSettings />} />
         <Route path="/plans" element={<Plans />} />
+        <Route path="/workspace" element={<Workspace />} />
       </Route>
 
       <Route path="/404" element={<NotFound />} />

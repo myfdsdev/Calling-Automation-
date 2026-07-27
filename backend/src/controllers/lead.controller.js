@@ -6,6 +6,7 @@ import { Agent } from '../models/Agent.js';
 import { findLeads } from '../services/leadProvider.service.js';
 import { scoreLeads } from '../services/gemini.service.js';
 import { isValidPhone, normalizePhone } from '../utils/phone.js';
+import { getBillingAccount } from '../services/workspace.service.js';
 
 const dedupeKey = (l) =>
   `${(l.businessName || '').toLowerCase().trim()}|${(l.phone || '').replace(/\D/g, '')}`;
@@ -14,10 +15,12 @@ const dedupeKey = (l) =>
 export const searchLeads = asyncHandler(async (req, res) => {
   const q = req.body;
   const user = req.user;
+  // Credits are billed to the workspace owner (members spend the owner's pool).
+  const billing = await getBillingAccount(user);
 
-  if (user.leadCredits < q.limit) {
+  if (billing.leadCredits < q.limit) {
     throw ApiError.badRequest(
-      `Not enough lead credits. You have ${user.leadCredits}, this search needs ${q.limit}.`,
+      `Not enough lead credits. The workspace has ${billing.leadCredits}, this search needs ${q.limit}.`,
     );
   }
 
@@ -58,7 +61,7 @@ export const searchLeads = asyncHandler(async (req, res) => {
     return res.json({
       leads: [],
       message: 'No new leads matched your filters. Try widening the criteria.',
-      creditsRemaining: user.leadCredits,
+      creditsRemaining: billing.leadCredits,
     });
   }
 
@@ -76,9 +79,9 @@ export const searchLeads = asyncHandler(async (req, res) => {
 
   const created = await Lead.insertMany(docs);
 
-  // Consume credits by the number actually stored.
+  // Consume credits from the workspace owner by the number actually stored.
   const updated = await User.findByIdAndUpdate(
-    user._id,
+    billing._id,
     { $inc: { leadCredits: -created.length } },
     { new: true },
   );

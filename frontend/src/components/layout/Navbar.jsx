@@ -139,6 +139,11 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link to="/workspace">
+                  <Users className="h-4 w-4" /> Workspace
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/plans">
                   <Sparkles className="h-4 w-4" /> Plans &amp; Billing
                 </Link>
@@ -232,6 +237,13 @@ export function Navbar() {
                     className={drawerLinkClass({ isActive: false })}
                   >
                     <User className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Account
+                  </Link>
+                  <Link
+                    to="/workspace"
+                    onClick={() => setMobileOpen(false)}
+                    className={drawerLinkClass({ isActive: false })}
+                  >
+                    <Users className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Workspace
                   </Link>
                   <Link
                     to="/plans"

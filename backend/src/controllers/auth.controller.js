@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import { signToken } from '../middleware/auth.js';
 import { verifyGoogleIdToken } from '../services/googleAuth.service.js';
 import { env } from '../config/env.js';
+import { ensureWorkspace, buildSessionPayload } from '../services/workspace.service.js';
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, companyName } = req.body;
@@ -14,9 +15,10 @@ export const register = asyncHandler(async (req, res) => {
 
   const passwordHash = await User.hashPassword(password);
   const user = await User.create({ name, email, companyName, passwordHash });
+  await ensureWorkspace(user);
 
   const token = signToken(user._id);
-  res.status(201).json({ token, user: user.toSafeJSON() });
+  res.status(201).json({ token, user: await buildSessionPayload(user) });
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -28,8 +30,9 @@ export const login = asyncHandler(async (req, res) => {
   const ok = await user.comparePassword(password);
   if (!ok) throw ApiError.unauthorized('Incorrect email or password');
 
+  await ensureWorkspace(user);
   const token = signToken(user._id);
-  res.json({ token, user: user.toSafeJSON() });
+  res.json({ token, user: await buildSessionPayload(user) });
 });
 
 export const googleAuth = asyncHandler(async (req, res) => {
@@ -60,8 +63,9 @@ export const googleAuth = asyncHandler(async (req, res) => {
     status = 201;
   }
 
+  await ensureWorkspace(user);
   const token = signToken(user._id);
-  res.status(status).json({ token, user: user.toSafeJSON() });
+  res.status(status).json({ token, user: await buildSessionPayload(user) });
 });
 
 export const googleConfig = asyncHandler(async (_req, res) => {
@@ -72,5 +76,5 @@ export const googleConfig = asyncHandler(async (_req, res) => {
 });
 
 export const me = asyncHandler(async (req, res) => {
-  res.json({ user: req.user.toSafeJSON() });
+  res.json({ user: await buildSessionPayload(req.user) });
 });
