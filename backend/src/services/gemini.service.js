@@ -68,7 +68,8 @@ const scriptSchema = z.object({
 });
 
 export async function generateScript(input, creds = {}) {
-  const { companyName, serviceName, callGoal, targetCustomer, offerDescription } = input;
+  const { companyName, serviceName, businessLocation, callGoal, targetCustomer, offerDescription } =
+    input;
 
   const prompt = `You are an expert cold-calling script writer. Write a concise, polite,
 professional outbound calling script for an AI voice agent. Return ONLY JSON matching:
@@ -81,7 +82,8 @@ professional outbound calling script for an AI voice agent. Return ONLY JSON mat
 }
 Context:
 - Company: ${companyName || 'our company'}
-- Service: ${serviceName || 'our service'}
+- Service / business type: ${serviceName || 'our service'}
+${businessLocation ? `- Business location: ${businessLocation}` : ''}
 - Goal of the call: ${callGoal || 'book a short consultation'}
 - Target customer: ${targetCustomer || 'local business owners'}
 - Offer: ${offerDescription || 'a helpful service'}

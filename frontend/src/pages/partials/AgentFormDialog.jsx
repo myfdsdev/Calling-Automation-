@@ -30,6 +30,7 @@ const EMPTY = {
   name: '',
   companyName: '',
   serviceName: '',
+  businessLocation: '',
   language: 'en-US',
   voiceId: DEFAULT_VOICE,
   callGoal: '',
@@ -42,19 +43,19 @@ const EMPTY = {
   closingMessage: '',
 };
 
-function toForm(agent) {
-  if (!agent) return EMPTY;
+function toForm(source) {
+  if (!source) return EMPTY;
   return {
     ...EMPTY,
-    ...agent,
-    qualificationQuestions: (agent.qualificationQuestions?.length
-      ? agent.qualificationQuestions
+    ...source,
+    qualificationQuestions: (source.qualificationQuestions?.length
+      ? source.qualificationQuestions
       : ['']
-    ).map((v) => ({ value: v })),
+    ).map((v) => ({ value: typeof v === 'string' ? v : v.value })),
   };
 }
 
-export function AgentFormDialog({ open, onOpenChange, agent }) {
+export function AgentFormDialog({ open, onOpenChange, agent, prefill }) {
   const isEdit = Boolean(agent);
   const { create, update, generateScript } = useAgentMutations();
   const [tab, setTab] = useState('basic');
@@ -67,16 +68,16 @@ export function AgentFormDialog({ open, onOpenChange, agent }) {
     setValue,
     getValues,
     formState: { errors },
-  } = useForm({ defaultValues: toForm(agent) });
+  } = useForm({ defaultValues: toForm(agent || prefill) });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'qualificationQuestions' });
 
   useEffect(() => {
     if (open) {
-      reset(toForm(agent));
+      reset(toForm(agent || prefill));
       setTab('basic');
     }
-  }, [open, agent, reset]);
+  }, [open, agent, prefill, reset]);
 
   const onGenerate = async () => {
     // Pull current objective fields to feed Gemini.
@@ -160,9 +161,13 @@ export function AgentFormDialog({ open, onOpenChange, agent }) {
                   <Input id="companyName" placeholder="BrightPixel Studio" {...register('companyName')} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="serviceName">Service name</Label>
+                  <Label htmlFor="serviceName">Service / business type</Label>
                   <Input id="serviceName" placeholder="Website redesign" {...register('serviceName')} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="businessLocation">Business location</Label>
+                <Input id="businessLocation" placeholder="Bandra, Mumbai" {...register('businessLocation')} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">

@@ -58,7 +58,8 @@ export function buildSystemPrompt(agent) {
   return `You are ${agent.name}, a polite, professional AI phone agent for ${
     agent.companyName || 'the company'
   }.
-Service: ${agent.serviceName || 'N/A'}
+Service / business type: ${agent.serviceName || 'N/A'}
+${agent.businessLocation ? `Business location: ${agent.businessLocation}` : ''}
 Goal of the call: ${agent.callGoal || 'qualify the lead and book a short consultation'}
 Target customer: ${agent.targetCustomer || 'local business owners'}
 Company intro: ${agent.introduction || ''}

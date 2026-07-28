@@ -162,13 +162,54 @@ function KeyRow({ svc, status, platformFallback, canManage }) {
   );
 }
 
-export function WorkspaceApiKeysCard() {
-  const { data, isLoading } = useQuery({
+/** Shared query for the workspace's API-key status (deduped across consumers). */
+export function useApiKeys() {
+  return useQuery({
     queryKey: ['api-keys'],
     queryFn: async () => (await api.get('/settings/api-keys')).data,
   });
+}
 
+/** The connectable key rows + note, without any Card chrome — reused by the
+ *  Settings card and the first-run onboarding popup. */
+export function WorkspaceApiKeysList() {
+  const { data, isLoading } = useApiKeys();
   const status = data?.apiKeys;
+  const canManage = data?.canManage;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="h-20 animate-pulse rounded-lg bg-muted" />
+        <div className="h-20 animate-pulse rounded-lg bg-muted" />
+        <div className="h-20 animate-pulse rounded-lg bg-muted" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {SERVICES.map((svc) => (
+        <KeyRow
+          key={svc.key}
+          svc={svc}
+          status={status?.[svc.key] || {}}
+          platformFallback={status?.platformFallback?.[svc.key]}
+          canManage={canManage}
+        />
+      ))}
+      <div className="flex items-start gap-2.5 rounded-lg bg-surface-secondary p-3 text-xs text-muted-foreground">
+        <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-info-500" />
+        Keys are verified with the provider, encrypted before storage, and never shown again. All
+        members of this workspace use these keys; each key&apos;s usage is billed to your own
+        provider account.
+      </div>
+    </div>
+  );
+}
+
+export function WorkspaceApiKeysCard() {
+  const { data, isLoading } = useApiKeys();
   const canManage = data?.canManage;
 
   return (
@@ -190,31 +231,8 @@ export function WorkspaceApiKeysCard() {
           ) : null}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {isLoading ? (
-          <>
-            <div className="h-20 animate-pulse rounded-lg bg-muted" />
-            <div className="h-20 animate-pulse rounded-lg bg-muted" />
-          </>
-        ) : (
-          <>
-            {SERVICES.map((svc) => (
-              <KeyRow
-                key={svc.key}
-                svc={svc}
-                status={status?.[svc.key] || {}}
-                platformFallback={status?.platformFallback?.[svc.key]}
-                canManage={canManage}
-              />
-            ))}
-            <div className="flex items-start gap-2.5 rounded-lg bg-surface-secondary p-3 text-xs text-muted-foreground">
-              <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-info-500" />
-              Keys are verified with the provider, encrypted before storage, and never shown again.
-              All members of this workspace use these keys; each key&apos;s usage is billed to your
-              own provider account.
-            </div>
-          </>
-        )}
+      <CardContent>
+        <WorkspaceApiKeysList />
       </CardContent>
     </Card>
   );

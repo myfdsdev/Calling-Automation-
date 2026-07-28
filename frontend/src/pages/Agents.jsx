@@ -41,6 +41,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { AgentFormDialog } from '@/pages/partials/AgentFormDialog';
+import { AgentBuilderChat } from '@/pages/partials/AgentBuilderChat';
 import { useAgents, useAgentMutations } from '@/hooks/queries';
 import { getErrorMessage } from '@/lib/api';
 import { VOICES, LANGUAGES } from '@/lib/constants';
@@ -262,17 +263,28 @@ export default function Agents() {
   const { data: agents, isLoading, isError, refetch } = useAgents();
   const { update, remove } = useAgentMutations();
 
+  const [chatOpen, setChatOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [prefill, setPrefill] = useState(null);
   const [testing, setTesting] = useState(null);
   const [testOpen, setTestOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  // Creating starts with the guided chatbot; "Skip" hands off to the manual form.
   const openCreate = () => {
     setEditing(null);
+    setPrefill(null);
+    setChatOpen(true);
+  };
+  const openManual = (seed) => {
+    setChatOpen(false);
+    setEditing(null);
+    setPrefill(seed || null);
     setFormOpen(true);
   };
   const openEdit = (agent) => {
+    setPrefill(null);
     setEditing(agent);
     setFormOpen(true);
   };
@@ -342,7 +354,13 @@ export default function Agents() {
         />
       )}
 
-      <AgentFormDialog open={formOpen} onOpenChange={setFormOpen} agent={editing} />
+      <AgentBuilderChat
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        onSwitchToManual={openManual}
+        onCreated={refetch}
+      />
+      <AgentFormDialog open={formOpen} onOpenChange={setFormOpen} agent={editing} prefill={prefill} />
       <TestAgentDialog agent={testing} open={testOpen} onOpenChange={setTestOpen} />
       <ConfirmationDialog
         open={Boolean(deleteTarget)}

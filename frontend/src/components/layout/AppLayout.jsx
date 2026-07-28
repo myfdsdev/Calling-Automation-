@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
+import { ApiKeysOnboarding } from '@/components/common/ApiKeysOnboarding';
 
 export function AppLayout() {
   return (
@@ -8,6 +9,7 @@ export function AppLayout() {
       <main className="page-container">
         <Outlet />
       </main>
+      <ApiKeysOnboarding />
     </div>
   );
 }

@@ -73,6 +73,7 @@ export const agentSchema = z.object({
   name: z.string().min(2, 'Agent name is required').max(80),
   companyName: z.string().max(120).optional().default(''),
   serviceName: z.string().max(120).optional().default(''),
+  businessLocation: z.string().max(160).optional().default(''),
   language: z.string().max(20).optional().default('en-US'),
   voiceId: z
     .enum(VAPI_VOICES, { errorMap: () => ({ message: 'Choose one of the available voices' }) })
@@ -97,6 +98,7 @@ export const agentUpdateSchema = agentSchema.partial();
 export const generateScriptSchema = z.object({
   companyName: z.string().max(120).optional().default(''),
   serviceName: z.string().max(120).optional().default(''),
+  businessLocation: z.string().max(160).optional().default(''),
   callGoal: z.string().max(400).optional().default(''),
   targetCustomer: z.string().max(400).optional().default(''),
   offerDescription: z.string().max(600).optional().default(''),

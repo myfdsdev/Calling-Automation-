@@ -14,6 +14,7 @@ const agentSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     companyName: { type: String, trim: true, default: '' },
     serviceName: { type: String, trim: true, default: '' },
+    businessLocation: { type: String, trim: true, default: '' },
     language: { type: String, default: 'en-US' },
     voiceId: { type: String, default: DEFAULT_VOICE },
 
