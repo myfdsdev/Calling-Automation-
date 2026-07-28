@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TwilioConnectCard } from '@/pages/partials/TwilioConnectCard';
+import { WorkspaceApiKeysCard } from '@/pages/partials/WorkspaceApiKeysCard';
 import { api, getErrorMessage } from '@/lib/api';
 
 const INTEGRATIONS = [
@@ -64,7 +65,7 @@ export default function ApiSettings() {
       <PageHeader title="API Settings" description="Integration status for your calling stack." />
 
       <Card className="border-primary/20 bg-accent/20">
-        <CardContent className="grid grid-cols-[24px_1fr] gap-3 p-4">
+        <CardContent className="grid grid-cols-[24px_1fr] gap-3 p-5 sm:p-6">
           <span className="flex h-6 w-6 items-start justify-center pt-0.5 text-primary">
             <ShieldCheck className="h-5 w-5" />
           </span>
@@ -95,10 +96,12 @@ export default function ApiSettings() {
         </Card>
       ) : null}
 
+      <WorkspaceApiKeysCard />
+
       <TwilioConnectCard />
 
       <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
           <div className="text-sm">
             <p className="font-medium text-foreground">Agent sync</p>
             <p className="text-muted-foreground">

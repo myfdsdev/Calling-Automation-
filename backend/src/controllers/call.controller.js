@@ -6,6 +6,7 @@ import { Agent } from '../models/Agent.js';
 import * as runner from '../services/automation.service.js';
 import { startOfToday } from '../utils/dates.js';
 import { env } from '../config/env.js';
+import { resolveVapiKey } from '../services/workspace.service.js';
 
 export const listCalls = asyncHandler(async (req, res) => {
   const { status, result, agentId, leadId } = req.query;
@@ -57,10 +58,17 @@ export const startLeadCall = asyncHandler(async (req, res) => {
   if (lead.doNotCall) throw ApiError.badRequest('This lead is marked Do Not Call');
   if (!lead.phone) throw ApiError.badRequest('This lead has no phone number');
 
-  if (!env.demoMode && !req.user.canCall()) {
-    throw ApiError.serviceUnavailable(
-      'Connect your Twilio number in API Settings before placing calls.',
-    );
+  if (!env.demoMode) {
+    if (!(await resolveVapiKey(req.user))) {
+      throw ApiError.serviceUnavailable(
+        'Connect your workspace Vapi key in API Settings before placing calls.',
+      );
+    }
+    if (!req.user.canCall()) {
+      throw ApiError.serviceUnavailable(
+        'Connect your Twilio number in API Settings before placing calls.',
+      );
+    }
   }
 
   const agentId = req.body?.agentId || lead.agentId;

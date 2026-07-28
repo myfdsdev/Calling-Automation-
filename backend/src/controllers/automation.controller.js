@@ -4,7 +4,8 @@ import { Automation } from '../models/Automation.js';
 import { Agent } from '../models/Agent.js';
 import { Lead } from '../models/Lead.js';
 import * as runner from '../services/automation.service.js';
-import { env, features } from '../config/env.js';
+import { env } from '../config/env.js';
+import { resolveVapiKey } from '../services/workspace.service.js';
 
 export const createAutomation = asyncHandler(async (req, res) => {
   const { agentId, name, businessCategory, location, leadIds, delayBetweenCalls, maxRetries, callWindow } =
@@ -78,8 +79,11 @@ export const startAutomation = asyncHandler(async (req, res) => {
 
   // Fail fast: don't queue calls we can't actually place.
   if (!env.demoMode) {
-    if (!features.vapi) {
-      throw ApiError.serviceUnavailable('Calling is unavailable right now. Please contact support.');
+    const vapiKey = await resolveVapiKey(req.user);
+    if (!vapiKey) {
+      throw ApiError.serviceUnavailable(
+        'Connect your workspace Vapi key in API Settings before starting an automation.',
+      );
     }
     if (!req.user.canCall()) {
       throw ApiError.serviceUnavailable(

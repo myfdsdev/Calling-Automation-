@@ -5,6 +5,7 @@ import { Lead } from '../models/Lead.js';
 import * as vapi from '../services/vapi.service.js';
 import { generateScript } from '../services/gemini.service.js';
 import { assertAgentQuota } from './plan.controller.js';
+import { resolveWorkspaceKeys, resolveVapiKey } from '../services/workspace.service.js';
 
 export const listAgents = asyncHandler(async (req, res) => {
   const agents = await Agent.find({ userId: req.user._id }).sort({ createdAt: -1 });
@@ -27,9 +28,10 @@ export const createAgent = asyncHandler(async (req, res) => {
     companyName: req.body.companyName || req.user.companyName,
   });
 
-  // Best-effort: create the Vapi assistant and store its id.
+  // Best-effort: create the Vapi assistant with the workspace's Vapi key.
   try {
-    agent.vapiAssistantId = await vapi.upsertAssistant(agent);
+    const vapiKey = await resolveVapiKey(req.user);
+    agent.vapiAssistantId = await vapi.upsertAssistant(agent, vapiKey);
     await agent.save();
   } catch (err) {
     console.warn('[agent] assistant creation skipped:', err.message);
@@ -44,7 +46,8 @@ export const updateAgent = asyncHandler(async (req, res) => {
 
   Object.assign(agent, req.body);
   try {
-    agent.vapiAssistantId = await vapi.upsertAssistant(agent);
+    const vapiKey = await resolveVapiKey(req.user);
+    agent.vapiAssistantId = await vapi.upsertAssistant(agent, vapiKey);
   } catch (err) {
     console.warn('[agent] assistant update skipped:', err.message);
   }
@@ -56,7 +59,7 @@ export const deleteAgent = asyncHandler(async (req, res) => {
   const agent = await Agent.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
   if (!agent) throw ApiError.notFound('Agent not found');
 
-  await vapi.deleteAssistant(agent.vapiAssistantId);
+  await vapi.deleteAssistant(agent.vapiAssistantId, await resolveVapiKey(req.user));
   await Lead.updateMany({ agentId: agent._id }, { $set: { agentId: null } });
   res.json({ success: true });
 });
@@ -78,6 +81,7 @@ export const testAgent = asyncHandler(async (req, res) => {
 });
 
 export const generateAgentScript = asyncHandler(async (req, res) => {
-  const script = await generateScript(req.body);
+  const keys = await resolveWorkspaceKeys(req.user);
+  const script = await generateScript(req.body, { apiKey: keys.geminiKey, model: keys.geminiModel });
   res.json({ script });
 });

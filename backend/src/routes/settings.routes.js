@@ -7,10 +7,13 @@ import {
   disconnectTwilio,
   testTwilio,
   syncAgents,
+  getApiKeys,
+  connectApiKeys,
+  disconnectApiKey,
 } from '../controllers/settings.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { twilioConnectSchema, twilioLookupSchema } from '../validators/schemas.js';
+import { twilioConnectSchema, twilioLookupSchema, apiKeysSchema } from '../validators/schemas.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -30,5 +33,10 @@ router.post('/telephony/connect', credentialLimiter, validate(twilioConnectSchem
 router.post('/telephony/test', credentialLimiter, testTwilio);
 router.delete('/telephony', disconnectTwilio);
 router.post('/telephony/sync-agents', syncAgents);
+
+// Per-workspace external API keys (Gemini, SerpAPI).
+router.get('/api-keys', getApiKeys);
+router.put('/api-keys', credentialLimiter, validate(apiKeysSchema), connectApiKeys);
+router.delete('/api-keys/:service', disconnectApiKey);
 
 export default router;

@@ -1,22 +1,47 @@
 import axios from 'axios';
 import { z } from 'zod';
-import { env, features } from '../config/env.js';
+import { env } from '../config/env.js';
+import { ApiError } from '../utils/ApiError.js';
 
 const GEMINI_URL = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-/** Low-level Gemini call that asks for JSON and parses it. Returns null on any failure. */
-async function askGeminiJson(prompt) {
-  if (!features.gemini) return null;
+/** Verify a Gemini key works. Throws ApiError.badRequest if it's rejected. */
+export async function testGeminiKey(apiKey, model) {
+  try {
+    await axios.post(
+      GEMINI_URL(model || env.gemini.model),
+      { contents: [{ parts: [{ text: 'ping' }] }] },
+      { params: { key: apiKey }, timeout: 15000 },
+    );
+    return true;
+  } catch (err) {
+    const status = err.response?.status;
+    const msg = err.response?.data?.error?.message;
+    if (status === 400 || status === 403 || status === 401) {
+      throw ApiError.badRequest(`Gemini rejected that key${msg ? `: ${msg}` : ''}`);
+    }
+    throw ApiError.badRequest(`Could not verify the Gemini key: ${msg || err.message}`);
+  }
+}
+
+/**
+ * Low-level Gemini call that asks for JSON and parses it. Returns null on any failure.
+ * `creds.apiKey` is the workspace's own key (falls back to the platform env key).
+ */
+async function askGeminiJson(prompt, { apiKey, model } = {}) {
+  const key = apiKey || env.gemini.apiKey;
+  const mdl = model || env.gemini.model;
+  if (!key) return null;
   try {
     const { data } = await axios.post(
-      GEMINI_URL(env.gemini.model),
+      GEMINI_URL(mdl),
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.6, responseMimeType: 'application/json' },
       },
       {
-        params: { key: env.gemini.apiKey },
+        params: { key },
         timeout: 20000,
         headers: { 'Content-Type': 'application/json' },
       },
@@ -42,7 +67,7 @@ const scriptSchema = z.object({
   closingMessage: z.string(),
 });
 
-export async function generateScript(input) {
+export async function generateScript(input, creds = {}) {
   const { companyName, serviceName, callGoal, targetCustomer, offerDescription } = input;
 
   const prompt = `You are an expert cold-calling script writer. Write a concise, polite,
@@ -62,7 +87,7 @@ Context:
 - Offer: ${offerDescription || 'a helpful service'}
 Rules: introduce clearly, never make false promises, stop if not interested, respect opt-outs.`;
 
-  const raw = await askGeminiJson(prompt);
+  const raw = await askGeminiJson(prompt, creds);
   const parsed = raw && scriptSchema.safeParse(raw);
   if (parsed && parsed.success) return { ...parsed.data, source: 'gemini' };
 
@@ -104,10 +129,10 @@ const leadScoreItem = z.object({
  * Score an array of lead-like objects 0–100. Uses Gemini when available, otherwise
  * a transparent deterministic heuristic. Returns [{ score, reason }] aligned by index.
  */
-export async function scoreLeads(leads, context = {}) {
+export async function scoreLeads(leads, context = {}, creds = {}) {
   const heuristic = leads.map((l) => heuristicScore(l, context));
 
-  if (features.gemini && leads.length) {
+  if ((creds.apiKey || env.gemini.apiKey) && leads.length) {
     const compact = leads.map((l, i) => ({
       index: i,
       businessName: l.businessName,
@@ -126,7 +151,7 @@ whether already called (lower), do-not-call (score 0). Return ONLY JSON:
 {"scores":[{"index":number,"score":number,"reason":string}]}
 Leads: ${JSON.stringify(compact)}`;
 
-    const raw = await askGeminiJson(prompt);
+    const raw = await askGeminiJson(prompt, creds);
     const arr = raw?.scores;
     if (Array.isArray(arr)) {
       const byIndex = new Map();
@@ -215,8 +240,8 @@ const analysisSchema = z.object({
   doNotCall: z.boolean().default(false),
 });
 
-export async function analyzeCall({ transcript, endedReason }) {
-  if (features.gemini && transcript) {
+export async function analyzeCall({ transcript, endedReason }, creds = {}) {
+  if ((creds.apiKey || env.gemini.apiKey) && transcript) {
     const prompt = `Analyze this outbound sales call transcript. Return ONLY JSON:
 {"result":"interested|not_interested|follow_up|no_answer|busy|wrong_number|voicemail",
  "interestLevel":0-10,"summary":string,"objections":string[],
@@ -224,7 +249,7 @@ export async function analyzeCall({ transcript, endedReason }) {
 Ended reason: ${endedReason || 'unknown'}
 Transcript:
 ${transcript.slice(0, 6000)}`;
-    const raw = await askGeminiJson(prompt);
+    const raw = await askGeminiJson(prompt, creds);
     const parsed = raw && analysisSchema.safeParse(raw);
     if (parsed && parsed.success) return { ...parsed.data, source: 'gemini' };
   }

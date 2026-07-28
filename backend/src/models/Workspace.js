@@ -5,6 +5,14 @@ import mongoose from 'mongoose';
  * isolated per-user (each member sees only their own agents/leads/calls), but
  * credits & the plan are drawn from the OWNER's account.
  */
+// One connected external API key. `cipher` is AES-256-GCM ciphertext (never sent
+// to the client); `last4` + `connectedAt` are display-only metadata.
+const apiKeyField = {
+  cipher: { type: String, default: '' },
+  last4: { type: String, default: '' },
+  connectedAt: { type: Date, default: null },
+};
+
 const workspaceSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -13,6 +21,14 @@ const workspaceSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
       index: true,
+    },
+
+    // Bring-your-own-keys: each workspace connects its own external API keys.
+    // Features resolve THIS workspace's key — never another workspace's.
+    apiKeys: {
+      gemini: { ...apiKeyField, model: { type: String, default: '' } },
+      serpapi: { ...apiKeyField },
+      vapi: { ...apiKeyField },
     },
   },
   { timestamps: true },

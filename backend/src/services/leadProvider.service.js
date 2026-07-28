@@ -1,10 +1,30 @@
 import axios from 'axios';
-import { env, features } from '../config/env.js';
+import { env } from '../config/env.js';
 import { normalizePhone } from '../utils/phone.js';
 import { ApiError } from '../utils/ApiError.js';
 
 const SERPAPI_URL = 'https://serpapi.com/search.json';
 const PAGE_SIZE = 20; // SerpAPI Google Maps returns up to 20 local results per page
+
+/** Verify a SerpAPI key works. Throws ApiError.badRequest if it's rejected. */
+export async function testSerpApiKey(apiKey) {
+  try {
+    const { data } = await axios.get(SERPAPI_URL, {
+      params: { engine: 'google_maps', type: 'search', q: 'coffee in Austin', api_key: apiKey },
+      timeout: 20000,
+    });
+    if (data?.error) {
+      throw ApiError.badRequest(
+        `SerpAPI rejected that key: ${data.error.replace(/\s*Your API key should be here:.*$/i, '')}`,
+      );
+    }
+    return true;
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    const body = err.response?.data?.error;
+    throw ApiError.badRequest(`Could not verify the SerpAPI key: ${body || err.message}`);
+  }
+}
 
 /**
  * Find local business leads via SerpAPI's Google Maps engine.
@@ -13,10 +33,15 @@ const PAGE_SIZE = 20; // SerpAPI Google Maps returns up to 20 local results per 
  *
  * Returns an array of normalized lead-like plain objects (not yet persisted).
  */
-export async function findLeads(query) {
-  if (features.leadProvider) {
+export async function findLeads(query, creds = {}) {
+  // Workspace's own SerpAPI key, falling back to the platform key.
+  const apiKey = creds.apiKey || env.serpApi.apiKey;
+  const hl = creds.hl || env.serpApi.hl;
+  const gl = creds.gl || env.serpApi.gl;
+
+  if (apiKey) {
     try {
-      return await fromSerpApi(query);
+      return await fromSerpApi(query, { apiKey, hl, gl });
     } catch (err) {
       // Never silently substitute invented businesses for real ones — their phone
       // numbers would be dialed for real. Surface the failure instead.
@@ -29,7 +54,7 @@ export async function findLeads(query) {
   if (env.demoMode) return syntheticLeads(query);
 
   throw ApiError.serviceUnavailable(
-    'Lead provider is not configured. Add your SerpAPI key in API Settings.',
+    'No SerpAPI key. Connect your workspace API keys in API Settings.',
   );
 }
 
@@ -41,7 +66,7 @@ function buildQuery({ businessCategory, city, state, country }) {
   return place ? `${businessCategory} in ${place}` : businessCategory;
 }
 
-async function fromSerpApi(query) {
+async function fromSerpApi(query, { apiKey, hl, gl }) {
   const { limit } = query;
   const q = buildQuery(query);
   const collected = [];
@@ -55,10 +80,10 @@ async function fromSerpApi(query) {
           engine: 'google_maps',
           type: 'search',
           q,
-          hl: env.serpApi.hl,
-          gl: env.serpApi.gl,
+          hl,
+          gl,
           start: page * PAGE_SIZE,
-          api_key: env.serpApi.apiKey,
+          api_key: apiKey,
         },
         timeout: 30000,
       }));

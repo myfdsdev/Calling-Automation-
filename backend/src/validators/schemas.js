@@ -36,6 +36,17 @@ export const renameWorkspaceSchema = z.object({
   name: z.string().trim().min(2, 'Workspace name is too short').max(80),
 });
 
+export const apiKeysSchema = z
+  .object({
+    gemini: z.string().trim().min(10, 'That Gemini key looks too short').max(200).optional(),
+    geminiModel: z.string().trim().max(60).optional(),
+    serpapi: z.string().trim().min(10, 'That SerpAPI key looks too short').max(200).optional(),
+    vapi: z.string().trim().min(10, 'That Vapi key looks too short').max(200).optional(),
+  })
+  .refine((v) => v.gemini || v.serpapi || v.vapi, {
+    message: 'Provide at least one API key',
+  });
+
 /* ---------------- Telephony (user's own Twilio) ---------------- */
 export const twilioConnectSchema = z.object({
   accountSid: z

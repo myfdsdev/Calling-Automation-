@@ -5,15 +5,32 @@ import { isValidVoice, DEFAULT_VOICE } from '../config/voices.js';
 
 const VAPI_BASE = 'https://api.vapi.ai';
 
-function client() {
+// Per-workspace key when provided, else the platform key from env.
+const resolveKey = (vapiKey) => vapiKey || env.vapi.privateKey || '';
+
+function client(vapiKey) {
   return axios.create({
     baseURL: VAPI_BASE,
     timeout: 20000,
     headers: {
-      Authorization: `Bearer ${env.vapi.privateKey}`,
+      Authorization: `Bearer ${resolveKey(vapiKey)}`,
       'Content-Type': 'application/json',
     },
   });
+}
+
+/** Verify a Vapi private key works. Throws ApiError.badRequest if rejected. */
+export async function testVapiKey(apiKey) {
+  try {
+    await client(apiKey).get('/assistant', { params: { limit: 1 } });
+    return true;
+  } catch (err) {
+    const status = err.response?.status;
+    if (status === 401 || status === 403) {
+      throw ApiError.badRequest('Vapi rejected that private key');
+    }
+    throw ApiError.badRequest(vapiError(err, 'Could not verify the Vapi key'));
+  }
 }
 
 /**
@@ -97,17 +114,20 @@ export const isPlaceholderAssistant = (id) => !id || /^(demo|local)-/.test(id);
  * Push an agent to Vapi and return its assistant id. Throws on failure.
  * Use `upsertAssistant` when a failure shouldn't block the caller.
  */
-export async function syncAssistant(agent) {
-  if (!env.vapi.privateKey) {
-    throw ApiError.serviceUnavailable('Calling is unavailable right now. Please contact support.');
+export async function syncAssistant(agent, vapiKey) {
+  const key = resolveKey(vapiKey);
+  if (!key) {
+    throw ApiError.serviceUnavailable(
+      'No Vapi key. Connect your workspace Vapi key in API Settings.',
+    );
   }
   const payload = buildAssistant(agent);
   try {
     if (!isPlaceholderAssistant(agent.vapiAssistantId)) {
-      await client().patch(`/assistant/${agent.vapiAssistantId}`, payload);
+      await client(key).patch(`/assistant/${agent.vapiAssistantId}`, payload);
       return agent.vapiAssistantId;
     }
-    const { data } = await client().post('/assistant', payload);
+    const { data } = await client(key).post('/assistant', payload);
     return data.id;
   } catch (err) {
     if (err instanceof ApiError) throw err;
@@ -121,10 +141,10 @@ export async function syncAssistant(agent) {
  * so agents can still be designed and saved — calling heals it later via
  * `ensureAssistant`.
  */
-export async function upsertAssistant(agent) {
-  if (!env.vapi.privateKey) return agent.vapiAssistantId || `local-assistant-${agent._id}`;
+export async function upsertAssistant(agent, vapiKey) {
+  if (!resolveKey(vapiKey)) return agent.vapiAssistantId || `local-assistant-${agent._id}`;
   try {
-    return await syncAssistant(agent);
+    return await syncAssistant(agent, vapiKey);
   } catch (err) {
     console.warn('[vapi] upsertAssistant failed:', err.message);
     return agent.vapiAssistantId || `local-assistant-${agent._id}`;
@@ -136,20 +156,21 @@ export async function upsertAssistant(agent) {
  * while Vapi was unconfigured carry a placeholder id — rather than making the
  * user re-save the agent, sync it on demand and persist the new id.
  */
-export async function ensureAssistant(agent) {
+export async function ensureAssistant(agent, vapiKey) {
   if (!isPlaceholderAssistant(agent.vapiAssistantId)) return agent.vapiAssistantId;
 
-  const id = await syncAssistant(agent);
+  const id = await syncAssistant(agent, vapiKey);
   agent.vapiAssistantId = id;
   await agent.save();
   console.log(`[vapi] auto-synced assistant for agent ${agent._id} -> ${id}`);
   return id;
 }
 
-export async function deleteAssistant(assistantId) {
-  if (!env.vapi.privateKey || !assistantId || /^(demo|local)-/.test(assistantId)) return;
+export async function deleteAssistant(assistantId, vapiKey) {
+  const key = resolveKey(vapiKey);
+  if (!key || !assistantId || /^(demo|local)-/.test(assistantId)) return;
   try {
-    await client().delete(`/assistant/${assistantId}`);
+    await client(key).delete(`/assistant/${assistantId}`);
   } catch (err) {
     console.warn('[vapi] deleteAssistant failed:', vapiError(err));
   }
@@ -159,10 +180,11 @@ export async function deleteAssistant(assistantId) {
 /* Phone numbers (Twilio → Vapi)                                       */
 /* ------------------------------------------------------------------ */
 
-export async function listPhoneNumbers() {
-  if (!env.vapi.privateKey) throw ApiError.serviceUnavailable('Vapi is not configured');
+export async function listPhoneNumbers(vapiKey) {
+  const key = resolveKey(vapiKey);
+  if (!key) throw ApiError.serviceUnavailable('No Vapi key configured for this workspace');
   try {
-    const { data } = await client().get('/phone-number');
+    const { data } = await client(key).get('/phone-number');
     return Array.isArray(data) ? data : [];
   } catch (err) {
     throw ApiError.serviceUnavailable(vapiError(err, 'Could not reach Vapi'));
@@ -183,12 +205,15 @@ function serverBlock() {
  * Import a USER's Twilio number into our Vapi account.
  * Returns the Vapi phone number record (its `id` is what we call from).
  */
-export async function importTwilioNumber({ accountSid, authToken, phoneNumber, label }) {
-  if (!env.vapi.privateKey) {
-    throw ApiError.serviceUnavailable('Calling is not available — the platform Vapi key is missing.');
+export async function importTwilioNumber({ accountSid, authToken, phoneNumber, label, vapiKey }) {
+  const key = resolveKey(vapiKey);
+  if (!key) {
+    throw ApiError.serviceUnavailable(
+      'No Vapi key. Connect your workspace Vapi key in API Settings before adding a number.',
+    );
   }
   try {
-    const { data } = await client().post('/phone-number', {
+    const { data } = await client(key).post('/phone-number', {
       provider: 'twilio',
       number: phoneNumber,
       twilioAccountSid: accountSid,
@@ -203,19 +228,20 @@ export async function importTwilioNumber({ accountSid, authToken, phoneNumber, l
 }
 
 /** Remove a previously imported number from Vapi (used on disconnect / change). */
-export async function releasePhoneNumber(phoneNumberId) {
-  if (!env.vapi.privateKey || !phoneNumberId) return;
+export async function releasePhoneNumber(phoneNumberId, vapiKey) {
+  const key = resolveKey(vapiKey);
+  if (!key || !phoneNumberId) return;
   try {
-    await client().delete(`/phone-number/${phoneNumberId}`);
+    await client(key).delete(`/phone-number/${phoneNumberId}`);
   } catch (err) {
     console.warn('[vapi] releasePhoneNumber failed:', vapiError(err));
   }
 }
 
 /** Find an already-imported Vapi number matching an E.164 number, if any. */
-export async function findImportedNumber(phoneNumber) {
+export async function findImportedNumber(phoneNumber, vapiKey) {
   try {
-    const numbers = await listPhoneNumbers();
+    const numbers = await listPhoneNumbers(vapiKey);
     return numbers.find((n) => n.number === phoneNumber) || null;
   } catch {
     return null;
@@ -232,19 +258,21 @@ export async function findImportedNumber(phoneNumber) {
  * If the provider is not configured this THROWS rather than silently
  * pretending — simulated calls only happen when DEMO_MODE is explicitly on.
  */
-export async function startCall({ assistantId, phoneNumberId, phone, variableValues, metadata }) {
+export async function startCall({ assistantId, phoneNumberId, phone, variableValues, metadata, vapiKey }) {
+  const key = resolveKey(vapiKey);
+
   // Demo mode short-circuits before any provider check.
-  if (env.demoMode && (!features.vapi || !phoneNumberId)) {
+  if (env.demoMode && (!key || !phoneNumberId)) {
     return {
       providerCallId: `demo-call-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
       simulated: true,
     };
   }
 
-  if (!features.vapi) {
+  if (!key) {
     throw fatal(
       ApiError.serviceUnavailable(
-        'Calling is unavailable right now. Please contact support.',
+        'Connect your workspace Vapi key in API Settings before starting calls.',
       ),
     );
   }
@@ -266,7 +294,7 @@ export async function startCall({ assistantId, phoneNumberId, phone, variableVal
   }
 
   try {
-    const { data } = await client().post('/call', {
+    const { data } = await client(key).post('/call', {
       assistantId,
       phoneNumberId,
       customer: { number: phone },
@@ -279,12 +307,15 @@ export async function startCall({ assistantId, phoneNumberId, phone, variableVal
   }
 }
 
-/** Telephony status for one user's API Settings screen. Never returns secrets. */
-export function getTelephonyStatus(user) {
+/**
+ * Telephony status for one user's API Settings screen. Never returns secrets.
+ * `vapiReady` reflects whether the workspace has a usable Vapi key (own or platform).
+ */
+export function getTelephonyStatus(user, vapiKey) {
   const t = user.twilio || {};
+  const vapiReady = Boolean(resolveKey(vapiKey));
   return {
-    // Platform side
-    platformReady: Boolean(env.vapi.privateKey),
+    platformReady: vapiReady, // workspace has a Vapi key (own or platform fallback)
     webhookConfigured: Boolean(env.vapi.serverUrl),
     demoMode: env.demoMode,
     // This user's Twilio connection
@@ -293,7 +324,7 @@ export function getTelephonyStatus(user) {
     phoneNumber: t.phoneNumber || '',
     friendlyName: t.friendlyName || '',
     verifiedAt: t.verifiedAt || null,
-    canCall: Boolean(env.vapi.privateKey && t.verified && t.vapiPhoneNumberId),
+    canCall: Boolean(vapiReady && t.verified && t.vapiPhoneNumberId),
   };
 }
 

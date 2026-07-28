@@ -6,7 +6,7 @@ import { Agent } from '../models/Agent.js';
 import { findLeads } from '../services/leadProvider.service.js';
 import { scoreLeads } from '../services/gemini.service.js';
 import { isValidPhone, normalizePhone } from '../utils/phone.js';
-import { getBillingAccount } from '../services/workspace.service.js';
+import { getBillingAccount, resolveWorkspaceKeys } from '../services/workspace.service.js';
 
 const dedupeKey = (l) =>
   `${(l.businessName || '').toLowerCase().trim()}|${(l.phone || '').replace(/\D/g, '')}`;
@@ -26,7 +26,10 @@ export const searchLeads = asyncHandler(async (req, res) => {
 
   const location = [q.city, q.state, q.country].filter(Boolean).join(', ');
 
-  let raw = await findLeads(q);
+  // This workspace's own API keys (falls back to platform keys).
+  const wsKeys = await resolveWorkspaceKeys(user);
+
+  let raw = await findLeads(q, { apiKey: wsKeys.serpApiKey, hl: wsKeys.serpHl, gl: wsKeys.serpGl });
 
   // Apply hard filters requested by the user.
   raw = raw.filter((l) => {
@@ -65,8 +68,12 @@ export const searchLeads = asyncHandler(async (req, res) => {
     });
   }
 
-  // Score before saving.
-  const scores = await scoreLeads(fresh, { category: q.businessCategory, location });
+  // Score before saving (uses the workspace's Gemini key).
+  const scores = await scoreLeads(
+    fresh,
+    { category: q.businessCategory, location },
+    { apiKey: wsKeys.geminiKey, model: wsKeys.geminiModel },
+  );
   const docs = fresh.map((l, i) => ({
     ...l,
     userId: user._id,
@@ -140,7 +147,8 @@ export const scoreExistingLeads = asyncHandler(async (req, res) => {
   const leads = await Lead.find({ _id: { $in: req.body.leadIds }, userId: req.user._id });
   if (!leads.length) throw ApiError.notFound('No matching leads found');
 
-  const scores = await scoreLeads(leads, {});
+  const keys = await resolveWorkspaceKeys(req.user);
+  const scores = await scoreLeads(leads, {}, { apiKey: keys.geminiKey, model: keys.geminiModel });
   await Promise.all(
     leads.map((lead, i) => {
       lead.leadScore = scores[i].score;

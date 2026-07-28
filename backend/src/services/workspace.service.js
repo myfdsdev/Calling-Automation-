@@ -4,6 +4,7 @@ import { Workspace } from '../models/Workspace.js';
 import { Invite } from '../models/Invite.js';
 import { getPlan } from '../config/plans.js';
 import { env } from '../config/env.js';
+import { decryptSecret } from '../utils/crypto.js';
 
 const INVITE_TTL_DAYS = 14;
 
@@ -97,6 +98,84 @@ export async function moveToOwnWorkspace(user) {
   user.workspaceRole = 'owner';
   await user.save();
   return ws;
+}
+
+/* --------------------- Per-workspace API keys -------------------- */
+
+const safeDecrypt = (cipher) => {
+  try {
+    return cipher ? decryptSecret(cipher) : '';
+  } catch {
+    return '';
+  }
+};
+
+/** Load the workspace document the user belongs to (creating one if needed). */
+export async function getWorkspaceDoc(user) {
+  await ensureWorkspace(user);
+  return Workspace.findById(user.workspaceId);
+}
+
+/**
+ * Resolve the external API keys for a user's workspace. Uses THIS workspace's own
+ * key when connected, otherwise the platform key from env — never another
+ * workspace's key. Returns decrypted keys for immediate use (never stored/logged).
+ */
+export async function resolveWorkspaceKeys(user) {
+  const ws = await getWorkspaceDoc(user);
+  const wsGemini = safeDecrypt(ws?.apiKeys?.gemini?.cipher);
+  const wsSerp = safeDecrypt(ws?.apiKeys?.serpapi?.cipher);
+  const wsVapi = safeDecrypt(ws?.apiKeys?.vapi?.cipher);
+  return {
+    geminiKey: wsGemini || env.gemini.apiKey || '',
+    geminiModel: ws?.apiKeys?.gemini?.model || env.gemini.model,
+    serpApiKey: wsSerp || env.serpApi.apiKey || '',
+    serpHl: env.serpApi.hl,
+    serpGl: env.serpApi.gl,
+    vapiKey: wsVapi || env.vapi.privateKey || '',
+    source: {
+      gemini: wsGemini ? 'workspace' : env.gemini.apiKey ? 'platform' : 'none',
+      serpapi: wsSerp ? 'workspace' : env.serpApi.apiKey ? 'platform' : 'none',
+      vapi: wsVapi ? 'workspace' : env.vapi.privateKey ? 'platform' : 'none',
+    },
+  };
+}
+
+/** Resolve just the Vapi key for a user's workspace (own key or platform fallback). */
+export async function resolveVapiKey(user) {
+  const ws = await getWorkspaceDoc(user);
+  return safeDecrypt(ws?.apiKeys?.vapi?.cipher) || env.vapi.privateKey || '';
+}
+
+/** Display-only status for the API-keys settings screen (no secrets). */
+export function apiKeysStatus(ws) {
+  const g = ws?.apiKeys?.gemini || {};
+  const s = ws?.apiKeys?.serpapi || {};
+  const v = ws?.apiKeys?.vapi || {};
+  return {
+    gemini: {
+      connected: Boolean(g.cipher),
+      last4: g.last4 || '',
+      model: g.model || '',
+      connectedAt: g.connectedAt || null,
+    },
+    serpapi: {
+      connected: Boolean(s.cipher),
+      last4: s.last4 || '',
+      connectedAt: s.connectedAt || null,
+    },
+    vapi: {
+      connected: Boolean(v.cipher),
+      last4: v.last4 || '',
+      connectedAt: v.connectedAt || null,
+    },
+    // Whether a platform key exists as a fallback when the workspace hasn't set one.
+    platformFallback: {
+      gemini: Boolean(env.gemini.apiKey),
+      serpapi: Boolean(env.serpApi.apiKey),
+      vapi: Boolean(env.vapi.privateKey),
+    },
+  };
 }
 
 export { Invite };

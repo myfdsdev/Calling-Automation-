@@ -6,7 +6,15 @@ import { User } from '../models/User.js';
 import * as vapi from './vapi.service.js';
 import { analyzeCall } from './gemini.service.js';
 import { isDbConnected } from '../config/db.js';
-import { getBillingAccount } from './workspace.service.js';
+import { getBillingAccount, resolveWorkspaceKeys, resolveVapiKey } from './workspace.service.js';
+
+/** Resolve the Gemini creds for a call's workspace (for background analysis). */
+async function geminiCredsForCall(call) {
+  const owner = await User.findById(call.userId);
+  if (!owner) return {};
+  const keys = await resolveWorkspaceKeys(owner);
+  return { apiKey: keys.geminiKey, model: keys.geminiModel };
+}
 
 /**
  * In-memory sequential calling engine. One lead is called at a time per automation.
@@ -139,14 +147,17 @@ async function advance(automationId) {
   let providerCallId = '';
   let simulated = false;
   try {
+    // The workspace's Vapi key (own or platform fallback).
+    const vapiKey = await resolveVapiKey(owner);
     // Heals agents created before Vapi was configured.
-    const assistantId = await vapi.ensureAssistant(agent);
+    const assistantId = await vapi.ensureAssistant(agent, vapiKey);
     const res = await vapi.startCall({
       assistantId,
       phoneNumberId: owner.twilio?.vapiPhoneNumberId || '',
       phone: lead.phone,
       variableValues,
       metadata: { automationId: String(auto._id), leadId: String(lead._id) },
+      vapiKey,
     });
     providerCallId = res.providerCallId;
     simulated = res.simulated;
@@ -245,14 +256,16 @@ export async function startSingleCall({ user, lead, agent }) {
   let providerCallId = '';
   let simulated = false;
   try {
+    const vapiKey = await resolveVapiKey(user);
     // Heals agents created before Vapi was configured.
-    const assistantId = await vapi.ensureAssistant(agent);
+    const assistantId = await vapi.ensureAssistant(agent, vapiKey);
     const res = await vapi.startCall({
       assistantId,
       phoneNumberId: user.twilio?.vapiPhoneNumberId || '',
       phone: lead.phone,
       variableValues,
       metadata: { leadId: String(lead._id) },
+      vapiKey,
     });
     providerCallId = res.providerCallId;
     simulated = res.simulated;
@@ -289,10 +302,11 @@ async function finishSimulatedCall(callId) {
   if (!call) return;
   const auto = call.automationId ? await Automation.findById(call.automationId) : null;
   const outcome = simulateOutcome();
-  const analysis = await analyzeCall({
-    transcript: outcome.transcript,
-    endedReason: outcome.endedReason,
-  });
+  const gem = await geminiCredsForCall(call);
+  const analysis = await analyzeCall(
+    { transcript: outcome.transcript, endedReason: outcome.endedReason },
+    gem,
+  );
   await applyCallResult({
     call,
     duration: outcome.duration,
@@ -406,7 +420,8 @@ async function finalizeAutomation(auto) {
 export async function finalizeCallFromReport({ providerCallId, duration, transcript, recordingUrl, endedReason }) {
   const call = await Call.findOne({ providerCallId });
   if (!call) return null;
-  const analysis = await analyzeCall({ transcript, endedReason });
+  const gem = await geminiCredsForCall(call);
+  const analysis = await analyzeCall({ transcript, endedReason }, gem);
   await applyCallResult({ call, duration, transcript, recordingUrl, endedReason, analysis });
   if (call.automationId) {
     const auto = await Automation.findById(call.automationId);
