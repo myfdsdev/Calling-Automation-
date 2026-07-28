@@ -40,7 +40,7 @@ const SERVICES = [
   },
 ];
 
-function KeyRow({ svc, status, platformFallback, canManage }) {
+function KeyRow({ svc, status, canManage }) {
   const qc = useQueryClient();
   const [value, setValue] = useState('');
   const [editing, setEditing] = useState(false);
@@ -83,8 +83,6 @@ function KeyRow({ svc, status, platformFallback, canManage }) {
               <p className="font-semibold text-foreground">{svc.name}</p>
               {status.connected ? (
                 <Badge variant="success">Connected</Badge>
-              ) : platformFallback ? (
-                <Badge variant="neutral">Platform default</Badge>
               ) : (
                 <Badge variant="warning">Not set</Badge>
               )}
@@ -95,11 +93,11 @@ function KeyRow({ svc, status, platformFallback, canManage }) {
                 Key ••••{status.last4}
                 {status.connectedAt ? ` · added ${formatDate(status.connectedAt)}` : ''}
               </p>
-            ) : platformFallback ? (
+            ) : (
               <p className="mt-1 text-xs text-muted-foreground">
-                Using the platform&apos;s shared key until you add your own.
+                Add your own key to enable this — the app never uses a shared/platform key.
               </p>
-            ) : null}
+            )}
           </div>
         </div>
 
@@ -190,13 +188,7 @@ export function WorkspaceApiKeysList() {
   return (
     <div className="space-y-3">
       {SERVICES.map((svc) => (
-        <KeyRow
-          key={svc.key}
-          svc={svc}
-          status={status?.[svc.key] || {}}
-          platformFallback={status?.platformFallback?.[svc.key]}
-          canManage={canManage}
-        />
+        <KeyRow key={svc.key} svc={svc} status={status?.[svc.key] || {}} canManage={canManage} />
       ))}
       <div className="flex items-start gap-2.5 rounded-lg bg-surface-secondary p-3 text-xs text-muted-foreground">
         <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-info-500" />

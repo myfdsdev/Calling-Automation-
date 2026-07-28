@@ -5,8 +5,8 @@ import { isValidVoice, DEFAULT_VOICE } from '../config/voices.js';
 
 const VAPI_BASE = 'https://api.vapi.ai';
 
-// Per-workspace key when provided, else the platform key from env.
-const resolveKey = (vapiKey) => vapiKey || env.vapi.privateKey || '';
+// Only the workspace's own Vapi key is ever used — never the platform env key.
+const resolveKey = (vapiKey) => vapiKey || '';
 
 function client(vapiKey) {
   return axios.create({
@@ -327,13 +327,13 @@ export async function getCall(providerCallId, vapiKey) {
 
 /**
  * Telephony status for one user's API Settings screen. Never returns secrets.
- * `vapiReady` reflects whether the workspace has a usable Vapi key (own or platform).
+ * `vapiReady` reflects whether the workspace has connected its own Vapi key.
  */
 export function getTelephonyStatus(user, vapiKey) {
   const t = user.twilio || {};
   const vapiReady = Boolean(resolveKey(vapiKey));
   return {
-    platformReady: vapiReady, // workspace has a Vapi key (own or platform fallback)
+    platformReady: vapiReady, // workspace has connected its own Vapi key
     webhookConfigured: Boolean(env.vapi.serverUrl),
     demoMode: env.demoMode,
     // This user's Twilio connection

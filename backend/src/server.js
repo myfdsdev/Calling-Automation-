@@ -1,6 +1,6 @@
 import { createApp } from './app.js';
 import { connectDb } from './config/db.js';
-import { env, features } from './config/env.js';
+import { env } from './config/env.js';
 import { resumeRunningAutomations, resumePendingCalls } from './services/automation.service.js';
 
 async function bootstrap() {
@@ -10,13 +10,13 @@ async function bootstrap() {
   const server = app.listen(env.port, () => {
     console.log(`\n  LeadCall AI API running on http://localhost:${env.port}`);
     console.log(`  Environment: ${env.nodeEnv}`);
-    console.log('  Integrations:');
-    console.log(`    - Gemini:        ${features.gemini ? 'live' : 'fallback (no key)'}`);
-    console.log(`    - Lead provider: ${features.leadProvider ? 'serpapi (Google Maps)' : 'synthetic (no key)'}`);
-    console.log(`    - Vapi:          ${features.vapi ? 'live (platform account)' : 'not configured'}`);
-    console.log('    - Twilio:        per-user — each user connects their own number in API Settings');
+    console.log('  Integrations (all per-workspace — each owner connects their own in API Settings):');
+    console.log('    - Gemini:        per-workspace key');
+    console.log('    - Lead provider: per-workspace SerpAPI key');
+    console.log('    - Vapi:          per-workspace key');
+    console.log('    - Twilio:        per-workspace number');
 
-    if (features.vapi && !env.vapi.serverUrl) {
+    if (!env.vapi.serverUrl) {
       console.warn(
         '\n  [warn] VAPI_SERVER_URL is not set. Calls will start but transcripts,\n' +
           '         recordings and outcomes cannot be delivered back. Set it to a public\n' +
@@ -27,11 +27,6 @@ async function bootstrap() {
       console.warn(
         '\n  [warn] DEMO_MODE is ON — calls are SIMULATED with fabricated transcripts.\n' +
           '         Set DEMO_MODE=false for real calling.',
-      );
-    } else if (!features.vapi) {
-      console.warn(
-        '\n  [warn] Calling is disabled — VAPI_PRIVATE_KEY is missing. Starting an\n' +
-          '         automation returns a clear error rather than faking calls.',
       );
     }
     if (!process.env.CREDENTIALS_SECRET) {

@@ -34,9 +34,9 @@ export async function testSerpApiKey(apiKey) {
  * Returns an array of normalized lead-like plain objects (not yet persisted).
  */
 export async function findLeads(query, creds = {}) {
-  // Workspace's own SerpAPI key, falling back to the platform key.
-  const apiKey = creds.apiKey || env.serpApi.apiKey;
-  const hl = creds.hl || env.serpApi.hl;
+  // Only the workspace's own SerpAPI key is used — never the platform key.
+  const apiKey = creds.apiKey;
+  const hl = creds.hl || env.serpApi.hl; // locale only
   const gl = creds.gl || env.serpApi.gl;
 
   if (apiKey) {

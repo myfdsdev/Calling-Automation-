@@ -30,8 +30,10 @@ export async function testGeminiKey(apiKey, model) {
  * `creds.apiKey` is the workspace's own key (falls back to the platform env key).
  */
 async function askGeminiJson(prompt, { apiKey, model } = {}) {
-  const key = apiKey || env.gemini.apiKey;
-  const mdl = model || env.gemini.model;
+  // Only the workspace's own Gemini key is used — never the platform key. With no
+  // workspace key, callers transparently fall back to their non-AI heuristic.
+  const key = apiKey;
+  const mdl = model || env.gemini.model; // model name only, not a key
   if (!key) return null;
   try {
     const { data } = await axios.post(
@@ -134,7 +136,7 @@ const leadScoreItem = z.object({
 export async function scoreLeads(leads, context = {}, creds = {}) {
   const heuristic = leads.map((l) => heuristicScore(l, context));
 
-  if ((creds.apiKey || env.gemini.apiKey) && leads.length) {
+  if (creds.apiKey && leads.length) {
     const compact = leads.map((l, i) => ({
       index: i,
       businessName: l.businessName,
@@ -243,7 +245,7 @@ const analysisSchema = z.object({
 });
 
 export async function analyzeCall({ transcript, endedReason }, creds = {}) {
-  if ((creds.apiKey || env.gemini.apiKey) && transcript) {
+  if (creds.apiKey && transcript) {
     const prompt = `Analyze this outbound sales call transcript. Return ONLY JSON:
 {"result":"interested|not_interested|follow_up|no_answer|busy|wrong_number|voicemail",
  "interestLevel":0-10,"summary":string,"objections":string[],

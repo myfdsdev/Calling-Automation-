@@ -117,9 +117,11 @@ export async function getWorkspaceDoc(user) {
 }
 
 /**
- * Resolve the external API keys for a user's workspace. Uses THIS workspace's own
- * key when connected, otherwise the platform key from env — never another
- * workspace's key. Returns decrypted keys for immediate use (never stored/logged).
+ * Resolve the external API keys for a user's workspace. ONLY this workspace's own
+ * connected keys are ever used — the platform env keys are never used as a
+ * fallback (and never another workspace's key). Returns decrypted keys for
+ * immediate use (never stored/logged); empty string when the workspace hasn't
+ * connected that key yet.
  */
 export async function resolveWorkspaceKeys(user) {
   const ws = await getWorkspaceDoc(user);
@@ -127,24 +129,25 @@ export async function resolveWorkspaceKeys(user) {
   const wsSerp = safeDecrypt(ws?.apiKeys?.serpapi?.cipher);
   const wsVapi = safeDecrypt(ws?.apiKeys?.vapi?.cipher);
   return {
-    geminiKey: wsGemini || env.gemini.apiKey || '',
+    geminiKey: wsGemini || '',
+    // A model NAME (not a secret) is fine as a default for whichever Gemini key the workspace uses.
     geminiModel: ws?.apiKeys?.gemini?.model || env.gemini.model,
-    serpApiKey: wsSerp || env.serpApi.apiKey || '',
-    serpHl: env.serpApi.hl,
+    serpApiKey: wsSerp || '',
+    serpHl: env.serpApi.hl, // locale defaults, not credentials
     serpGl: env.serpApi.gl,
-    vapiKey: wsVapi || env.vapi.privateKey || '',
+    vapiKey: wsVapi || '',
     source: {
-      gemini: wsGemini ? 'workspace' : env.gemini.apiKey ? 'platform' : 'none',
-      serpapi: wsSerp ? 'workspace' : env.serpApi.apiKey ? 'platform' : 'none',
-      vapi: wsVapi ? 'workspace' : env.vapi.privateKey ? 'platform' : 'none',
+      gemini: wsGemini ? 'workspace' : 'none',
+      serpapi: wsSerp ? 'workspace' : 'none',
+      vapi: wsVapi ? 'workspace' : 'none',
     },
   };
 }
 
-/** Resolve just the Vapi key for a user's workspace (own key or platform fallback). */
+/** Resolve just the Vapi key for a user's workspace — the workspace's own key, or empty. */
 export async function resolveVapiKey(user) {
   const ws = await getWorkspaceDoc(user);
-  return safeDecrypt(ws?.apiKeys?.vapi?.cipher) || env.vapi.privateKey || '';
+  return safeDecrypt(ws?.apiKeys?.vapi?.cipher) || '';
 }
 
 /** Display-only status for the API-keys settings screen (no secrets). */
@@ -168,12 +171,6 @@ export function apiKeysStatus(ws) {
       connected: Boolean(v.cipher),
       last4: v.last4 || '',
       connectedAt: v.connectedAt || null,
-    },
-    // Whether a platform key exists as a fallback when the workspace hasn't set one.
-    platformFallback: {
-      gemini: Boolean(env.gemini.apiKey),
-      serpapi: Boolean(env.serpApi.apiKey),
-      vapi: Boolean(env.vapi.privateKey),
     },
   };
 }
