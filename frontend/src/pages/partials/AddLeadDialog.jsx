@@ -188,7 +188,7 @@ export function AddLeadDialog({ open, onOpenChange }) {
                 </div>
               ))}
             >
-              <LocationPicker cityListId="add-lead-cities" value={loc} onChange={setLoc} />
+              <LocationPicker value={loc} onChange={setLoc} />
             </Suspense>
           </div>
 

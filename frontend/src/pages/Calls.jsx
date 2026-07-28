@@ -155,8 +155,9 @@ export default function Calls() {
     {
       key: 'business',
       header: 'Business',
+      className: 'max-w-[260px]',
       render: (c) => (
-        <div className="min-w-0">
+        <div className="max-w-[260px]">
           <div className="flex items-center gap-2">
             <p className="truncate font-medium text-foreground">
               {c.leadId?.businessName || 'Lead'}
@@ -169,7 +170,14 @@ export default function Calls() {
         </div>
       ),
     },
-    { key: 'agent', header: 'Agent', render: (c) => <span className="text-muted-foreground">{c.agentId?.name || '—'}</span> },
+    {
+      key: 'agent',
+      header: 'Agent',
+      className: 'max-w-[160px]',
+      render: (c) => (
+        <span className="block max-w-[160px] truncate text-muted-foreground">{c.agentId?.name || '—'}</span>
+      ),
+    },
     { key: 'status', header: 'Status', render: (c) => <StatusBadge type="callStatus" value={c.status} /> },
     { key: 'result', header: 'Result', render: (c) => <StatusBadge type="callResult" value={c.result} /> },
     { key: 'duration', header: 'Duration', render: (c) => <span className="whitespace-nowrap text-muted-foreground">{formatDuration(c.duration)}</span> },

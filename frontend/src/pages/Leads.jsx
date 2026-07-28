@@ -48,8 +48,9 @@ export default function Leads() {
     {
       key: 'businessName',
       header: 'Business',
+      className: 'max-w-[240px]',
       render: (l) => (
-        <div className="min-w-0">
+        <div className="max-w-[240px]">
           <p className="truncate font-medium text-foreground">{l.businessName}</p>
           {l.website ? (
             <a
@@ -57,10 +58,10 @@ export default function Leads() {
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex max-w-full items-center gap-1 truncate text-xs text-brand-600 hover:underline"
+              className="flex items-center gap-1 text-xs text-brand-600 hover:underline"
             >
               <Globe className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{prettyUrl(l.website)}</span>
+              <span className="min-w-0 truncate">{prettyUrl(l.website)}</span>
             </a>
           ) : (
             <p className="truncate text-xs text-muted-foreground">{l.category || '—'}</p>
@@ -74,7 +75,14 @@ export default function Leads() {
       header: 'Location',
       render: (l) => <span className="whitespace-nowrap text-muted-foreground">{[l.city, l.state].filter(Boolean).join(', ') || '—'}</span>,
     },
-    { key: 'agent', header: 'Agent', render: (l) => <span className="text-muted-foreground">{l.agentId?.name || '—'}</span> },
+    {
+      key: 'agent',
+      header: 'Agent',
+      className: 'max-w-[160px]',
+      render: (l) => (
+        <span className="block max-w-[160px] truncate text-muted-foreground">{l.agentId?.name || '—'}</span>
+      ),
+    },
     { key: 'callStatus', header: 'Status', render: (l) => <StatusBadge type="callStatus" value={l.callStatus} /> },
     { key: 'callResult', header: 'Result', render: (l) => <StatusBadge type="callResult" value={l.callResult} /> },
     { key: 'lastCalledAt', header: 'Last Called', render: (l) => <span className="whitespace-nowrap text-muted-foreground">{l.lastCalledAt ? formatDate(l.lastCalledAt) : '—'}</span> },

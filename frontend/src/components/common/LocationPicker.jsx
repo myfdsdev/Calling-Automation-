@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Country, State, City } from 'country-state-city';
 import {
   Select,
@@ -9,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const COUNTRIES = Country.getAllCountries();
 const dialOf = (c) => (c ? `+${String(c.phonecode).replace(/^\+/, '')}` : '');
@@ -24,7 +26,7 @@ const dialOf = (c) => (c ? `+${String(c.phonecode).replace(/^\+/, '')}` : '');
  * states with thousands of cities stay searchable (and free text is still allowed
  * where the dataset is incomplete).
  */
-export function LocationPicker({ value, onChange, labels = true, cityListId = 'lp-cities' }) {
+export function LocationPicker({ value, onChange, labels = true }) {
   const countryCode = value?.countryCode || '';
   const stateCode = value?.stateCode || '';
   const city = value?.city || '';
@@ -106,18 +108,11 @@ export function LocationPicker({ value, onChange, labels = true, cityListId = 'l
       </Cell>
 
       <Cell label={labels ? 'City' : null}>
-        <Input
-          list={cityListId}
+        <CityCombobox
+          cities={cities}
           value={city}
-          onChange={(e) => emit({ countryCode, stateCode, city: e.target.value })}
-          placeholder={cities.length ? 'Select or type a city' : 'Type a city'}
-          autoComplete="off"
+          onChange={(v) => emit({ countryCode, stateCode, city: v })}
         />
-        <datalist id={cityListId}>
-          {cities.map((c) => (
-            <option key={`${c.name}-${c.latitude}-${c.longitude}`} value={c.name} />
-          ))}
-        </datalist>
       </Cell>
     </>
   );
@@ -128,6 +123,74 @@ function Cell({ label, children }) {
     <div className="space-y-1.5">
       {label ? <Label>{label}</Label> : null}
       {children}
+    </div>
+  );
+}
+
+/**
+ * A searchable city dropdown styled to match the app's Select (no ugly native
+ * <datalist>). Type to filter the selected state's cities, click to pick, and
+ * free text is still allowed for places not in the dataset.
+ */
+function CityCombobox({ cities, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  const q = (value || '').toLowerCase().trim();
+  const exact = cities.some((c) => c.name === value);
+  const matches = useMemo(
+    () => (q && !exact ? cities.filter((c) => c.name.toLowerCase().includes(q)) : cities),
+    [cities, q, exact],
+  );
+  const shown = matches.slice(0, 60);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <Input
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={cities.length ? 'Select or type a city' : 'Type a city'}
+        autoComplete="off"
+        className="pr-9"
+      />
+      <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 opacity-60" />
+      {open && shown.length > 0 ? (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md">
+          {shown.map((c) => (
+            <button
+              key={`${c.name}-${c.latitude}-${c.longitude}`}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(c.name);
+                setOpen(false);
+              }}
+              className={cn(
+                'block w-full truncate rounded-md px-3 py-1.5 text-left text-sm text-foreground hover:bg-brand-50',
+                c.name === value && 'bg-brand-100',
+              )}
+            >
+              {c.name}
+            </button>
+          ))}
+          {matches.length > shown.length ? (
+            <p className="px-3 py-1.5 text-xs text-muted-foreground">Keep typing to narrow the list…</p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
