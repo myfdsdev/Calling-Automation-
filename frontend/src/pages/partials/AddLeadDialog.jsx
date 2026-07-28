@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Loader2, UserPlus, Info } from 'lucide-react';
@@ -24,17 +24,32 @@ import {
 import { useAgents, useLeadMutations } from '@/hooks/queries';
 import { getErrorMessage } from '@/lib/api';
 
+// Heavy country/state/city dataset — loaded only when this dialog is opened.
+const LocationPicker = lazy(() =>
+  import('@/components/common/LocationPicker').then((m) => ({ default: m.LocationPicker })),
+);
+const PhoneCountrySelect = lazy(() =>
+  import('@/components/common/LocationPicker').then((m) => ({ default: m.PhoneCountrySelect })),
+);
+
 const EMPTY = {
   businessName: '',
   phone: '',
   agentId: '',
-  city: '',
-  state: '',
-  country: 'US',
   website: '',
   category: '',
   notes: '',
 };
+const EMPTY_LOC = { countryCode: 'US', stateCode: '', city: '', country: '', state: '' };
+
+/** Combine a dial-code prefix with a locally-typed number into E.164. */
+function toE164(dial, raw) {
+  const num = (raw || '').trim();
+  if (!num) return '';
+  if (num.startsWith('+')) return num.replace(/[^\d+]/g, '');
+  const digits = num.replace(/\D/g, '').replace(/^0+/, '');
+  return `${dial || ''}${digits}`;
+}
 
 export function AddLeadDialog({ open, onOpenChange }) {
   const { data: agents } = useAgents();
@@ -48,18 +63,36 @@ export function AddLeadDialog({ open, onOpenChange }) {
     formState: { errors },
   } = useForm({ defaultValues: EMPTY });
 
+  const [phoneCountry, setPhoneCountry] = useState('US');
+  const [phoneDial, setPhoneDial] = useState('+1');
+  const [loc, setLoc] = useState(EMPTY_LOC);
+
   useEffect(() => {
-    if (open) reset(EMPTY);
+    if (open) {
+      reset(EMPTY);
+      setPhoneCountry('US');
+      setPhoneDial('+1');
+      setLoc(EMPTY_LOC);
+    }
   }, [open, reset]);
 
   const onSubmit = (values) => {
-    create.mutate(values, {
-      onSuccess: (lead) => {
-        toast.success(`${lead.businessName} added — ready to call`);
-        onOpenChange(false);
+    create.mutate(
+      {
+        ...values,
+        phone: toE164(phoneDial, values.phone),
+        country: loc.country || '',
+        state: loc.state || '',
+        city: loc.city || '',
       },
-      onError: (e) => toast.error(getErrorMessage(e, 'Lead could not be added')),
-    });
+      {
+        onSuccess: (lead) => {
+          toast.success(`${lead.businessName} added — ready to call`);
+          onOpenChange(false);
+        },
+        onError: (e) => toast.error(getErrorMessage(e, 'Lead could not be added')),
+      },
+    );
   };
 
   return (
@@ -90,17 +123,32 @@ export function AddLeadDialog({ open, onOpenChange }) {
 
           <div className="space-y-1.5">
             <Label htmlFor="phone">Phone number *</Label>
-            <Input
-              id="phone"
-              placeholder="+14155550123"
-              autoComplete="off"
-              {...register('phone', { required: 'Phone number is required' })}
-            />
+            <div className="flex gap-2">
+              <Suspense
+                fallback={<div className="h-11 w-28 flex-shrink-0 animate-pulse rounded-lg bg-muted" />}
+              >
+                <PhoneCountrySelect
+                  value={phoneCountry}
+                  onChange={(iso, dial) => {
+                    setPhoneCountry(iso);
+                    setPhoneDial(dial);
+                  }}
+                />
+              </Suspense>
+              <Input
+                id="phone"
+                className="flex-1"
+                placeholder="415 555 0123"
+                autoComplete="off"
+                {...register('phone', { required: 'Phone number is required' })}
+              />
+            </div>
             {errors.phone ? (
               <p className="text-xs text-destructive">{errors.phone.message}</p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                International format with country code, e.g. +14155550123
+                Pick the country code, then type the local number — or paste a full{' '}
+                <code className="rounded bg-secondary px-1">+</code> number.
               </p>
             )}
           </div>
@@ -132,18 +180,16 @@ export function AddLeadDialog({ open, onOpenChange }) {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="city">City</Label>
-              <Input id="city" placeholder="Austin" {...register('city')} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="state">State</Label>
-              <Input id="state" placeholder="TX" {...register('state')} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="country">Country</Label>
-              <Input id="country" placeholder="US" {...register('country')} />
-            </div>
+            <Suspense
+              fallback={['Country', 'State', 'City'].map((l) => (
+                <div key={l} className="space-y-1.5">
+                  <Label>{l}</Label>
+                  <div className="h-11 animate-pulse rounded-lg bg-muted" />
+                </div>
+              ))}
+            >
+              <LocationPicker cityListId="add-lead-cities" value={loc} onChange={setLoc} />
+            </Suspense>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

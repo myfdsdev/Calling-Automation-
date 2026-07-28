@@ -1,7 +1,7 @@
 import { createApp } from './app.js';
 import { connectDb } from './config/db.js';
 import { env, features } from './config/env.js';
-import { resumeRunningAutomations } from './services/automation.service.js';
+import { resumeRunningAutomations, resumePendingCalls } from './services/automation.service.js';
 
 async function bootstrap() {
   await connectDb();
@@ -61,8 +61,10 @@ async function bootstrap() {
     process.exit(1);
   });
 
-  // Re-attach queue runners after the server is listening (non-blocking).
+  // Re-attach queue runners and in-flight call pollers after the server is
+  // listening (non-blocking).
   resumeRunningAutomations();
+  resumePendingCalls();
 }
 
 bootstrap().catch((err) => {

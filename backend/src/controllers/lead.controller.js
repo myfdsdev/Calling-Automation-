@@ -36,6 +36,7 @@ export const searchLeads = asyncHandler(async (req, res) => {
     if (q.mustHavePhone && !l.phone) return false;
     if (q.mustHaveWebsite && !l.website) return false;
     if (q.minRating && (l.rating || 0) < q.minRating) return false;
+    if (q.maxRating < 5 && (l.rating || 0) > q.maxRating) return false;
     if (q.minReviews && (l.reviewCount || 0) < q.minReviews) return false;
     if (l.phone && !isValidPhone(l.phone)) return false;
     return true;

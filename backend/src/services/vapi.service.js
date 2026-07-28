@@ -308,6 +308,23 @@ export async function startCall({ assistantId, phoneNumberId, phone, variableVal
 }
 
 /**
+ * Fetch a call's current state from Vapi. Used to reconcile a call when the
+ * end-of-call webhook can't reach us (no public server URL, or a missed
+ * delivery). Returns the raw Vapi call object, or null on any failure.
+ */
+export async function getCall(providerCallId, vapiKey) {
+  const key = resolveKey(vapiKey);
+  if (!key || !providerCallId || /^(demo|local)-/.test(providerCallId)) return null;
+  try {
+    const { data } = await client(key).get(`/call/${providerCallId}`);
+    return data;
+  } catch (err) {
+    console.warn('[vapi] getCall failed:', vapiError(err));
+    return null;
+  }
+}
+
+/**
  * Telephony status for one user's API Settings screen. Never returns secrets.
  * `vapiReady` reflects whether the workspace has a usable Vapi key (own or platform).
  */

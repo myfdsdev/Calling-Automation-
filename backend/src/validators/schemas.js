@@ -112,6 +112,7 @@ export const leadSearchSchema = z.object({
   city: z.string().max(80).optional().default(''),
   limit: z.coerce.number().int().min(1).max(50).optional().default(20),
   minRating: z.coerce.number().min(0).max(5).optional().default(0),
+  maxRating: z.coerce.number().min(0).max(5).optional().default(5),
   minReviews: z.coerce.number().int().min(0).optional().default(0),
   mustHavePhone: z.boolean().optional().default(true),
   mustHaveWebsite: z.boolean().optional().default(false),

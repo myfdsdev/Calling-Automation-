@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, PhoneOff, ThumbsUp, ThumbsDown, Search, Eye, UserPlus } from 'lucide-react';
+import { Users, PhoneOff, ThumbsUp, ThumbsDown, Search, Eye, UserPlus, Globe } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatCard } from '@/components/common/StatCard';
 import { FilterBar } from '@/components/common/FilterBar';
@@ -14,13 +14,11 @@ import { LeadDrawer } from '@/pages/partials/LeadDrawer';
 import { AddLeadDialog } from '@/pages/partials/AddLeadDialog';
 import { useLeads, useAgents } from '@/hooks/queries';
 import { LEAD_STATUS_OPTIONS, CALL_RESULT_OPTIONS } from '@/lib/constants';
-import { formatDate, cn } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
-function ScorePill({ score = 0 }) {
-  const tone =
-    score >= 70 ? 'bg-success-50 text-success-700' : score >= 40 ? 'bg-brand-100 text-brand-700' : 'bg-graphite-100 text-graphite-600';
-  return <span className={cn('rounded-md px-2 py-0.5 text-xs font-semibold', tone)}>{score}</span>;
-}
+/** Strip protocol / www / trailing slash for a compact display link. */
+const prettyUrl = (url = '') =>
+  url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');
 
 export default function Leads() {
   const [search, setSearch] = useState('');
@@ -53,7 +51,20 @@ export default function Leads() {
       render: (l) => (
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{l.businessName}</p>
-          <p className="truncate text-xs text-muted-foreground">{l.website || l.category || '—'}</p>
+          {l.website ? (
+            <a
+              href={l.website}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex max-w-full items-center gap-1 truncate text-xs text-brand-600 hover:underline"
+            >
+              <Globe className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{prettyUrl(l.website)}</span>
+            </a>
+          ) : (
+            <p className="truncate text-xs text-muted-foreground">{l.category || '—'}</p>
+          )}
         </div>
       ),
     },
@@ -63,8 +74,6 @@ export default function Leads() {
       header: 'Location',
       render: (l) => <span className="whitespace-nowrap text-muted-foreground">{[l.city, l.state].filter(Boolean).join(', ') || '—'}</span>,
     },
-    { key: 'source', header: 'Source', render: (l) => <span className="capitalize text-muted-foreground">{(l.source || '').replace('_', ' ')}</span> },
-    { key: 'leadScore', header: 'Score', render: (l) => <ScorePill score={l.leadScore} /> },
     { key: 'agent', header: 'Agent', render: (l) => <span className="text-muted-foreground">{l.agentId?.name || '—'}</span> },
     { key: 'callStatus', header: 'Status', render: (l) => <StatusBadge type="callStatus" value={l.callStatus} /> },
     { key: 'callResult', header: 'Result', render: (l) => <StatusBadge type="callResult" value={l.callResult} /> },
@@ -127,7 +136,7 @@ export default function Leads() {
       />
 
       {isLoading ? (
-        <TableSkeleton cols={7} />
+        <TableSkeleton cols={8} />
       ) : isError ? (
         <QueryError onRetry={refetch} message="Unable to load leads" />
       ) : leads.length ? (

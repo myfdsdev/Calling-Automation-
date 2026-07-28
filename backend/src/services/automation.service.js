@@ -146,9 +146,11 @@ async function advance(automationId) {
 
   let providerCallId = '';
   let simulated = false;
+  // The workspace's Vapi key (own or platform fallback) — hoisted so the live
+  // reconciliation poller can reuse it after the call is placed.
+  let vapiKey = '';
   try {
-    // The workspace's Vapi key (own or platform fallback).
-    const vapiKey = await resolveVapiKey(owner);
+    vapiKey = await resolveVapiKey(owner);
     // Heals agents created before Vapi was configured.
     const assistantId = await vapi.ensureAssistant(agent, vapiKey);
     const res = await vapi.startCall({
@@ -207,8 +209,11 @@ async function advance(automationId) {
     // DEMO_MODE only: resolve the call locally after a short "conversation".
     const talkMs = 4000 + Math.floor(Math.random() * 6000);
     schedule(`call-${call._id}`, talkMs, () => finishSimulatedCall(call._id));
+  } else {
+    // Live mode: the Vapi webhook finalizes the call — but if it can't reach us,
+    // this poller reconciles the outcome so the queue still advances.
+    scheduleLiveCallPoll(call._id, vapiKey, 0);
   }
-  // Live mode: we wait for the Vapi webhook to call finalizeCallFromReport.
 }
 
 /** Halt an automation on a configuration error and put its leads back. */
@@ -255,8 +260,9 @@ export async function startSingleCall({ user, lead, agent }) {
 
   let providerCallId = '';
   let simulated = false;
+  let vapiKey = '';
   try {
-    const vapiKey = await resolveVapiKey(user);
+    vapiKey = await resolveVapiKey(user);
     // Heals agents created before Vapi was configured.
     const assistantId = await vapi.ensureAssistant(agent, vapiKey);
     const res = await vapi.startCall({
@@ -293,6 +299,8 @@ export async function startSingleCall({ user, lead, agent }) {
   if (simulated) {
     const talkMs = 4000 + Math.floor(Math.random() * 6000);
     schedule(`call-${call._id}`, talkMs, () => finishSimulatedCall(call._id));
+  } else {
+    scheduleLiveCallPoll(call._id, vapiKey, 0);
   }
   return call;
 }
@@ -318,6 +326,21 @@ async function finishSimulatedCall(callId) {
   if (auto) await afterCall(auto, call);
 }
 
+/** True when a Vapi endedReason means the call never connected (config/transport error). */
+export function isConnectionFailure(endedReason = '') {
+  return /error|fault|failed|no-transport|get-transport/.test((endedReason || '').toLowerCase());
+}
+
+/** Turn a raw Vapi error endedReason into a short, user-facing failure reason. */
+export function humanizeEndedReason(endedReason = '') {
+  const r = (endedReason || '').toLowerCase();
+  if (r.includes('transport'))
+    return "Call couldn't connect — check your Twilio number's voice & country permissions";
+  if (r.includes('twilio')) return 'Twilio rejected the call — verify the number and account status';
+  if (r.includes('pipeline')) return 'The voice pipeline failed to start';
+  return `Call failed to connect (${endedReason})`;
+}
+
 /**
  * Apply an analysis + provider data to a call and its lead. Shared by the
  * simulator and the live webhook path.
@@ -330,6 +353,30 @@ export async function applyCallResult({
   endedReason,
   analysis,
 }) {
+  // A provider/transport error means the call never actually connected to the
+  // customer — record it as a failure, not a misleading "completed / not interested".
+  if (isConnectionFailure(endedReason)) {
+    call.status = 'failed';
+    call.result = 'no_answer';
+    call.duration = 0;
+    call.transcript = '';
+    call.recordingUrl = '';
+    call.summary = '';
+    call.failureReason = humanizeEndedReason(endedReason);
+    call.endedReason = endedReason || '';
+    call.endedAt = new Date();
+    await call.save();
+
+    const lead = await Lead.findById(call.leadId);
+    if (lead) {
+      lead.callResult = 'no_answer';
+      lead.callStatus = 'failed';
+      lead.lastCalledAt = new Date();
+      await lead.save();
+    }
+    return; // nothing connected → don't consume calling minutes
+  }
+
   const contactStatus = ['no_answer', 'busy', 'voicemail'].includes(analysis.result)
     ? analysis.result === 'voicemail'
       ? 'completed'
@@ -418,8 +465,17 @@ async function finalizeAutomation(auto) {
  * and advances its automation (if any).
  */
 export async function finalizeCallFromReport({ providerCallId, duration, transcript, recordingUrl, endedReason }) {
-  const call = await Call.findOne({ providerCallId });
-  if (!call) return null;
+  if (!providerCallId) return null;
+  // Atomically claim this call so the webhook and the polling fallback can't both
+  // finalize it — that would double-count and double-advance the queue.
+  const call = await Call.findOneAndUpdate(
+    { providerCallId, endedAt: null },
+    { $set: { endedAt: new Date() } },
+    { new: true },
+  );
+  if (!call) return null; // unknown call, or already finalized by the other path
+  clearTimer(`poll-${call._id}`); // stop any pending reconciliation poll
+
   const gem = await geminiCredsForCall(call);
   const analysis = await analyzeCall({ transcript, endedReason }, gem);
   await applyCallResult({ call, duration, transcript, recordingUrl, endedReason, analysis });
@@ -428,6 +484,107 @@ export async function finalizeCallFromReport({ providerCallId, duration, transcr
     if (auto) await afterCall(auto, call);
   }
   return call;
+}
+
+/* -------------- Live-call reconciliation (webhook fallback) -------------- */
+
+const LIVE_POLL_INTERVAL_MS = 12_000; // re-check the provider roughly every 12s
+const LIVE_POLL_MAX_MS = 12 * 60 * 1000; // stop waiting after 12 minutes
+
+const VAPI_STATUS = {
+  queued: 'queued',
+  ringing: 'ringing',
+  'in-progress': 'in_progress',
+  forwarding: 'in_progress',
+  ended: 'completed',
+};
+
+function scheduleLiveCallPoll(callId, vapiKey, elapsed = 0) {
+  schedule(`poll-${callId}`, LIVE_POLL_INTERVAL_MS, () =>
+    reconcileLiveCall(String(callId), vapiKey, elapsed + LIVE_POLL_INTERVAL_MS),
+  );
+}
+
+/**
+ * Poll Vapi for a live call's outcome and finalize it when the provider reports
+ * the call ended. This is the fallback that lets calls complete even when the
+ * end-of-call webhook can't reach us (no public VAPI_SERVER_URL, or a missed
+ * delivery). Finalization goes through the same claim-guarded path as the webhook.
+ */
+async function reconcileLiveCall(callId, vapiKey, elapsed) {
+  const call = await Call.findById(callId);
+  if (!call || call.endedAt) return; // gone or already finalized (webhook won the race)
+
+  const remote = await vapi.getCall(call.providerCallId, vapiKey);
+
+  if (remote?.status === 'ended') {
+    const startedMs = remote.startedAt ? Date.parse(remote.startedAt) : 0;
+    const endedMs = remote.endedAt ? Date.parse(remote.endedAt) : 0;
+    const duration = startedMs && endedMs ? Math.max(0, Math.round((endedMs - startedMs) / 1000)) : 0;
+    await finalizeCallFromReport({
+      providerCallId: call.providerCallId,
+      duration,
+      transcript: remote.artifact?.transcript || remote.transcript || '',
+      recordingUrl:
+        remote.artifact?.recordingUrl || remote.recordingUrl || remote.artifact?.recording?.url || '',
+      endedReason: remote.endedReason || '',
+    });
+    return;
+  }
+
+  // Keep the interim status fresh for the live UI while we wait.
+  const mapped = remote?.status ? VAPI_STATUS[remote.status] : null;
+  if (mapped && mapped !== 'completed' && mapped !== call.status) {
+    call.status = mapped;
+    await call.save();
+  }
+
+  if (elapsed >= LIVE_POLL_MAX_MS) {
+    // Never reported ending — don't wedge the automation forever.
+    console.warn('[automation] live call', callId, 'timed out without an end-of-call report');
+    call.status = 'failed';
+    call.failureReason = 'No end-of-call report received from the calling provider';
+    call.endedAt = new Date();
+    await call.save();
+    const lead = await Lead.findById(call.leadId);
+    if (lead && lead.callStatus === 'calling') {
+      lead.callStatus = 'failed';
+      await lead.save();
+    }
+    if (call.automationId) {
+      const auto = await Automation.findById(call.automationId);
+      if (auto) await afterCall(auto, call);
+    }
+    return;
+  }
+
+  scheduleLiveCallPoll(callId, vapiKey, elapsed);
+}
+
+/**
+ * Re-attach reconciliation pollers for live calls that were in flight when the
+ * server last stopped (their in-memory timers were lost on restart).
+ */
+export async function resumePendingCalls() {
+  if (!isDbConnected()) return;
+  try {
+    const pending = await Call.find({
+      simulated: false,
+      endedAt: null,
+      status: { $in: ['queued', 'ringing', 'in_progress'] },
+      providerCallId: { $nin: ['', null] },
+    }).select('_id userId providerCallId');
+
+    for (const call of pending) {
+      const owner = await User.findById(call.userId);
+      if (!owner) continue;
+      const vapiKey = await resolveVapiKey(owner);
+      scheduleLiveCallPoll(call._id, vapiKey, 0);
+    }
+    if (pending.length) console.log(`[automation] resumed ${pending.length} pending call poll(s)`);
+  } catch (err) {
+    console.warn('[automation] could not resume pending calls:', err.message);
+  }
 }
 
 /* --------------------- Simulation helpers ----------------------- */

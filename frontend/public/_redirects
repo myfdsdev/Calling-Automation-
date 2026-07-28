@@ -1,0 +1,3 @@
+# SPA fallback: serve index.html for any path so client-side routes (e.g.
+# /leads, /calls) don't 404 when opened directly or reloaded on the host.
+/*    /index.html   200

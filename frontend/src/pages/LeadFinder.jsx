@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
@@ -50,6 +50,12 @@ import { useAgents } from '@/hooks/queries';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
+// The country/state/city dataset is heavy (~all world cities), so load it only
+// when the Lead Finder is actually opened.
+const LocationPicker = lazy(() =>
+  import('@/components/common/LocationPicker').then((m) => ({ default: m.LocationPicker })),
+);
+
 const AVG_MIN_PER_CALL = 2;
 
 export default function LeadFinder() {
@@ -66,16 +72,23 @@ export default function LeadFinder() {
     defaultValues: {
       agentId: '',
       businessCategory: '',
-      country: 'US',
-      state: '',
-      city: '',
       limit: 20,
       minRating: 0,
+      maxRating: 5,
       minReviews: 0,
       mustHavePhone: true,
       mustHaveWebsite: false,
       excludeCalled: true,
     },
+  });
+
+  // Location is a cascading Country → State → City picker. The picker resolves
+  // ISO codes to readable names for us, so we just forward them at submit time.
+  const [loc, setLoc] = useState({ countryCode: 'US', stateCode: '', city: '', country: '', state: '' });
+  const locationNames = () => ({
+    country: loc.country || '',
+    state: loc.state || '',
+    city: loc.city || '',
   });
 
   // Automation setup state
@@ -129,8 +142,10 @@ export default function LeadFinder() {
     setAutoAgentId(values.agentId || activeAgents[0]?._id || '');
     searchMut.mutate({
       ...values,
+      ...locationNames(),
       limit: Number(values.limit),
       minRating: Number(values.minRating),
+      maxRating: Number(values.maxRating),
       minReviews: Number(values.minReviews),
     });
   };
@@ -173,11 +188,12 @@ export default function LeadFinder() {
   };
   const startAutomation = () => {
     const values = watch();
+    const place = locationNames();
     startMut.mutate({
       agentId: autoAgentId,
-      name: `${values.businessCategory} — ${[values.city, values.state].filter(Boolean).join(', ')}`,
+      name: `${values.businessCategory} — ${[place.city, place.state].filter(Boolean).join(', ')}`,
       businessCategory: values.businessCategory,
-      location: [values.city, values.state, values.country].filter(Boolean).join(', '),
+      location: [place.city, place.state, place.country].filter(Boolean).join(', '),
       leadIds: selectedList.map((l) => l._id),
       delayBetweenCalls: Number(delayBetweenCalls),
       maxRetries: Number(maxRetries),
@@ -237,21 +253,21 @@ export default function LeadFinder() {
               <Field label="Number of leads">
                 <Input type="number" min={1} max={50} {...register('limit')} />
               </Field>
-              <Field label="Country">
-                <Input placeholder="US" {...register('country')} />
-              </Field>
-              <Field label="State / region">
-                <Input placeholder="California" {...register('state')} />
-              </Field>
-              <Field label="City">
-                <Input placeholder="San Francisco" {...register('city')} />
-              </Field>
               <Field label="Minimum rating">
                 <Input type="number" min={0} max={5} step="0.1" {...register('minRating')} />
+              </Field>
+              <Field label="Max. rating (optional)">
+                <Input type="number" min={0} max={5} step="0.1" {...register('maxRating')} />
               </Field>
               <Field label="Minimum reviews">
                 <Input type="number" min={0} {...register('minReviews')} />
               </Field>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Suspense fallback={<LocationLoading />}>
+                <LocationPicker value={loc} onChange={setLoc} />
+              </Suspense>
             </div>
 
             <div className="flex flex-wrap gap-6 rounded-lg bg-secondary/50 p-4">
@@ -432,6 +448,21 @@ function Field({ label, children }) {
       <Label>{label}</Label>
       {children}
     </div>
+  );
+}
+
+/** Placeholder that holds the Country / State / City row's layout while the
+ *  location dataset chunk loads. */
+function LocationLoading() {
+  return (
+    <>
+      {['Country', 'State / region', 'City'].map((label) => (
+        <div key={label} className="space-y-1.5">
+          <Label>{label}</Label>
+          <div className="h-11 animate-pulse rounded-lg bg-muted" />
+        </div>
+      ))}
+    </>
   );
 }
 

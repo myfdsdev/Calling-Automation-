@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/lib/api';
@@ -91,7 +92,7 @@ export default function Register() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" placeholder="At least 8 characters" {...register('password')} />
+          <PasswordInput id="password" placeholder="At least 8 characters" {...register('password')} />
           {errors.password ? (
             <p className="text-xs text-destructive">{errors.password.message}</p>
           ) : null}
