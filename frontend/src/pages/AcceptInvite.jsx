@@ -98,7 +98,7 @@ export default function AcceptInvite() {
           <>
             You&apos;ve been invited as a{' '}
             <span className="font-semibold text-foreground">{info.role}</span>. This invite is for{' '}
-            <span className="font-semibold text-foreground">{info.email}</span>.
+            <span className="break-all font-semibold text-foreground">{info.email}</span>.
           </>
         }
       />
@@ -108,7 +108,7 @@ export default function AcceptInvite() {
           <div className="space-y-3">
             <p className="text-center text-sm text-muted-foreground">
               Sign in (or create an account) with{' '}
-              <span className="font-medium text-foreground">{info.email}</span> to accept.
+              <span className="break-all font-medium text-foreground">{info.email}</span> to accept.
             </p>
             <Button asChild className="w-full">
               <Link to="/login">
@@ -123,10 +123,14 @@ export default function AcceptInvite() {
           </div>
         ) : user.email?.toLowerCase() !== info.email.toLowerCase() ? (
           <div className="space-y-3">
-            <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-100 p-3 text-sm text-brand-700">
+            <div className="flex items-start gap-2.5 rounded-lg border border-brand-200 bg-brand-100 p-3.5 text-sm text-brand-700">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-              You&apos;re signed in as <span className="font-semibold">{user.email}</span>, but this
-              invite is for {info.email}. Sign in with the invited email to accept.
+              <p className="min-w-0 leading-relaxed">
+                You&apos;re signed in as{' '}
+                <span className="break-all font-semibold">{user.email}</span>, but this invite is for{' '}
+                <span className="break-all font-semibold">{info.email}</span>. Sign in with the
+                invited email to accept.
+              </p>
             </div>
             <Button asChild variant="outline" className="w-full">
               <Link to="/account">Go to my account</Link>
