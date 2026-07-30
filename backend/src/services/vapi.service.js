@@ -373,6 +373,8 @@ export function getTelephonyStatus(user, vapiKey) {
     phoneNumber: t.phoneNumber || '',
     friendlyName: t.friendlyName || '',
     verifiedAt: t.verifiedAt || null,
+    // Trial Twilio accounts can't call arbitrary leads — surfaced so the UI can warn.
+    trial: Boolean(t.trial),
     canCall: Boolean(vapiReady && t.verified && t.vapiPhoneNumberId),
   };
 }

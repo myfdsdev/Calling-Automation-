@@ -4,6 +4,7 @@ import { Automation } from '../models/Automation.js';
 import { Agent } from '../models/Agent.js';
 import { Lead } from '../models/Lead.js';
 import * as runner from '../services/automation.service.js';
+import * as twilio from '../services/twilio.service.js';
 import { env } from '../config/env.js';
 import { resolveVapiKey } from '../services/workspace.service.js';
 
@@ -89,6 +90,11 @@ export const startAutomation = asyncHandler(async (req, res) => {
       throw ApiError.serviceUnavailable(
         'Connect your Twilio number in API Settings before starting an automation.',
       );
+    }
+    // A trial Twilio number can't call arbitrary leads — surface a clear upgrade
+    // message instead of placing a queue of calls that all fail.
+    if (await twilio.refreshUserTrial(req.user._id)) {
+      throw ApiError.badRequest(twilio.TRIAL_ACCOUNT_MESSAGE);
     }
   }
 

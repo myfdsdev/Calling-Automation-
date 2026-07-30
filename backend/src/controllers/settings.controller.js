@@ -90,12 +90,15 @@ export const connectTwilio = asyncHandler(async (req, res) => {
     verified: true,
     verifiedAt: new Date(),
     friendlyName: number.friendlyName || account.friendlyName || '',
+    trial: account.trial,
   };
   await user.save();
 
   res.status(201).json({
     telephony: vapi.getTelephonyStatus(user, vapiKey),
-    message: `${phoneNumber} connected and ready to call`,
+    message: account.trial
+      ? `${phoneNumber} connected — but this is a Twilio TRIAL account. Trial accounts can only call numbers you've verified in Twilio, not your leads. Upgrade your Twilio account to start calling.`
+      : `${phoneNumber} connected and ready to call`,
   });
 });
 

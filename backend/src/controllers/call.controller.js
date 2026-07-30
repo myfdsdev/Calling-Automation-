@@ -5,6 +5,7 @@ import { Lead } from '../models/Lead.js';
 import { Agent } from '../models/Agent.js';
 import * as runner from '../services/automation.service.js';
 import * as vapi from '../services/vapi.service.js';
+import * as twilio from '../services/twilio.service.js';
 import { startOfToday } from '../utils/dates.js';
 import { env } from '../config/env.js';
 import { resolveVapiKey } from '../services/workspace.service.js';
@@ -89,6 +90,9 @@ export const startLeadCall = asyncHandler(async (req, res) => {
       throw ApiError.serviceUnavailable(
         'Connect your Twilio number in API Settings before placing calls.',
       );
+    }
+    if (await twilio.refreshUserTrial(req.user._id)) {
+      throw ApiError.badRequest(twilio.TRIAL_ACCOUNT_MESSAGE);
     }
   }
 

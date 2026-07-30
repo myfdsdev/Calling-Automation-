@@ -181,6 +181,20 @@ export function TwilioConnectCard() {
               </div>
             </div>
 
+            {t.trial ? (
+              <div className="flex items-start gap-3 rounded-lg border border-brand-300 bg-brand-100 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" />
+                <div className="space-y-1">
+                  <p className="font-medium text-brand-800">Trial Twilio account — upgrade to call leads</p>
+                  <p className="text-brand-700">
+                    Trial accounts can only call numbers you&apos;ve verified in Twilio, not your
+                    leads. Starting a call or automation will show an upgrade message until you
+                    upgrade your Twilio account to a paid plan.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             <ul className="space-y-2">
               <Check ok={t.platformReady}>Calling service available</Check>
               <Check ok={t.webhookConfigured}>

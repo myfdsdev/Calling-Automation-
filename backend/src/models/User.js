@@ -42,6 +42,9 @@ const userSchema = new mongoose.Schema(
       verified: { type: Boolean, default: false },
       verifiedAt: { type: Date, default: null },
       friendlyName: { type: String, default: '' },
+      // Twilio trial accounts can only call pre-verified numbers, not arbitrary
+      // leads — flagged so lead calling shows a clear "upgrade" error, not fake calls.
+      trial: { type: Boolean, default: false },
     },
   },
   { timestamps: true },
