@@ -2,6 +2,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { env } from '../config/env.js';
 import { Call } from '../models/Call.js';
 import { finalizeCallFromReport } from '../services/automation.service.js';
+import { pickRecordingUrl } from '../services/vapi.service.js';
 
 /**
  * Vapi webhook. Handles the call lifecycle events and, on end-of-call-report,
@@ -45,18 +46,16 @@ export const vapiWebhook = asyncHandler(async (req, res) => {
         providerCallId,
         duration: Math.round(message.durationSeconds || call.duration || 0),
         transcript: artifact.transcript || message.transcript || '',
-        recordingUrl: artifact.recordingUrl || message.recordingUrl || '',
+        recordingUrl: pickRecordingUrl(artifact, message),
         endedReason: message.endedReason || call.endedReason || '',
       });
       break;
     }
 
     case 'recording': {
-      if (providerCallId && message.recordingUrl) {
-        await Call.findOneAndUpdate(
-          { providerCallId },
-          { $set: { recordingUrl: message.recordingUrl } },
-        );
+      const url = pickRecordingUrl(message.artifact, message);
+      if (providerCallId && url) {
+        await Call.findOneAndUpdate({ providerCallId }, { $set: { recordingUrl: url } });
       }
       break;
     }

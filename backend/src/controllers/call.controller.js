@@ -4,6 +4,7 @@ import { Call } from '../models/Call.js';
 import { Lead } from '../models/Lead.js';
 import { Agent } from '../models/Agent.js';
 import * as runner from '../services/automation.service.js';
+import * as vapi from '../services/vapi.service.js';
 import { startOfToday } from '../utils/dates.js';
 import { env } from '../config/env.js';
 import { resolveVapiKey } from '../services/workspace.service.js';
@@ -49,6 +50,26 @@ export const getCall = asyncHandler(async (req, res) => {
     .populate('leadId', 'businessName phone city state website')
     .populate('agentId', 'name voiceId');
   if (!call) throw ApiError.notFound('Call not found');
+
+  // Provider recording URLs are short-lived (they expire ~1h after generation),
+  // so fetch a fresh, playable one on demand instead of serving a stale/expired
+  // stored URL. Best-effort: fall back to whatever's stored if the fetch fails.
+  if (!call.simulated && call.providerCallId && !/^(demo|local)-/.test(call.providerCallId)) {
+    try {
+      const vapiKey = await resolveVapiKey(req.user);
+      if (vapiKey) {
+        const remote = await vapi.getCall(call.providerCallId, vapiKey);
+        const fresh = vapi.pickRecordingUrl(remote?.artifact, remote || {});
+        if (fresh && fresh !== call.recordingUrl) {
+          call.recordingUrl = fresh;
+          Call.updateOne({ _id: call._id }, { $set: { recordingUrl: fresh } }).catch(() => {});
+        }
+      }
+    } catch {
+      /* keep the stored URL */
+    }
+  }
+
   res.json({ call });
 });
 

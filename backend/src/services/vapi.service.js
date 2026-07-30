@@ -49,6 +49,33 @@ function vapiError(err, fallback) {
   return msg || err.message || fallback;
 }
 
+/**
+ * Extract a call's recording URL from a Vapi artifact/message/call object.
+ * Vapi exposes the recording under several shapes depending on API version, so
+ * we check every known location (top-level, stereo, and the nested `recording`
+ * object) and return the first non-empty URL.
+ */
+export function pickRecordingUrl(artifact = {}, fallback = {}) {
+  const a = artifact || {};
+  const rec = a.recording || {};
+  return (
+    // Presigned URLs are the ones that actually play in a browser (the raw R2/S3
+    // URLs below return 400). They're short-lived, so re-fetch for old calls.
+    a.presignedMonoUrl ||
+    a.presignedStereoUrl ||
+    a.recordingUrl ||
+    a.stereoRecordingUrl ||
+    rec.mono?.combinedUrl ||
+    rec.stereoUrl ||
+    rec.combinedUrl ||
+    rec.url ||
+    fallback.presignedMonoUrl ||
+    fallback.recordingUrl ||
+    fallback.stereoRecordingUrl ||
+    ''
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Assistants                                                          */
 /* ------------------------------------------------------------------ */
@@ -95,6 +122,10 @@ function buildAssistant(agent) {
       model: 'nova-2',
       // "en-US" -> "en"; Deepgram wants the base language code.
       language: (agent.language || 'en-US').split('-')[0],
+    },
+    // Explicitly record every call so a recording URL is always produced.
+    artifactPlan: {
+      recordingEnabled: true,
     },
   };
 

@@ -189,10 +189,17 @@ export default function Calls() {
       render: (c) => (
         <div className="flex justify-end gap-1">
           {c.recordingUrl ? (
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Play recording">
-              <a href={c.recordingUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                <PlayCircle className="h-4 w-4" />
-              </a>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Play recording"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDetailCall(c._id);
+              }}
+            >
+              <PlayCircle className="h-4 w-4" />
             </Button>
           ) : null}
           <Button

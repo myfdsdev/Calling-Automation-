@@ -506,6 +506,25 @@ function scheduleLiveCallPoll(callId, vapiKey, elapsed = 0) {
 }
 
 /**
+ * After a call ends, its recording URL can take a few seconds to appear in Vapi.
+ * Poll a handful of times to backfill it onto the finalized call.
+ */
+function scheduleRecordingFetch(callId, vapiKey, tries = 0) {
+  schedule(`rec-${callId}`, 15_000, async () => {
+    const call = await Call.findById(callId);
+    if (!call || call.recordingUrl) return; // gone or already captured
+    const remote = await vapi.getCall(call.providerCallId, vapiKey);
+    const url = vapi.pickRecordingUrl(remote?.artifact, remote || {});
+    if (url) {
+      call.recordingUrl = url;
+      await call.save();
+    } else if (tries < 5) {
+      scheduleRecordingFetch(callId, vapiKey, tries + 1);
+    }
+  });
+}
+
+/**
  * Poll Vapi for a live call's outcome and finalize it when the provider reports
  * the call ended. This is the fallback that lets calls complete even when the
  * end-of-call webhook can't reach us (no public VAPI_SERVER_URL, or a missed
@@ -521,14 +540,16 @@ async function reconcileLiveCall(callId, vapiKey, elapsed) {
     const startedMs = remote.startedAt ? Date.parse(remote.startedAt) : 0;
     const endedMs = remote.endedAt ? Date.parse(remote.endedAt) : 0;
     const duration = startedMs && endedMs ? Math.max(0, Math.round((endedMs - startedMs) / 1000)) : 0;
+    const recordingUrl = vapi.pickRecordingUrl(remote.artifact, remote);
     await finalizeCallFromReport({
       providerCallId: call.providerCallId,
       duration,
       transcript: remote.artifact?.transcript || remote.transcript || '',
-      recordingUrl:
-        remote.artifact?.recordingUrl || remote.recordingUrl || remote.artifact?.recording?.url || '',
+      recordingUrl,
       endedReason: remote.endedReason || '',
     });
+    // The recording can lag a few seconds behind the call ending — chase it.
+    if (!recordingUrl) scheduleRecordingFetch(call._id, vapiKey);
     return;
   }
 
