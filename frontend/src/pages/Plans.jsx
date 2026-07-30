@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { Check, Loader2, Sparkles, Coins, Timer, Bot, Info } from 'lucide-react';
+import { Check, Loader2, Sparkles, Bot, Users, Info } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { CardGridSkeleton } from '@/components/common/LoadingSkeleton';
 import { QueryError } from '@/components/common/QueryError';
@@ -121,13 +121,13 @@ export default function Plans() {
     <div className="space-y-6">
       <PageHeader
         title="Plans & Billing"
-        description="Choose the plan that fits your outreach volume. Credits and minutes refresh on activation."
+        description="A flat monthly platform fee — you bring your own API keys, so leads & calls are unlimited."
       />
 
       {/* Current plan + usage */}
       {isLoading ? null : usage ? (
         <Card>
-          <CardContent className="grid overflow-hidden p-0 sm:grid-cols-4">
+          <CardContent className="grid overflow-hidden p-0 sm:grid-cols-3">
             <div className="flex min-h-[112px] flex-col items-center justify-center gap-2 border-b border-border px-4 py-5 text-center sm:border-b-0 sm:border-r">
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
                 <Sparkles className="h-5 w-5" />
@@ -141,24 +141,17 @@ export default function Plans() {
             </div>
 
             <UsageStat
-              icon={Coins}
-              label="Lead credits"
-              value={usage.leadCredits}
-              tone="brand"
-              className="border-b border-border sm:border-b-0"
-            />
-            <UsageStat
-              icon={Timer}
-              label="Calling minutes"
-              value={usage.callingMinutes}
-              tone="success"
-              className="border-b border-border sm:border-b-0"
-            />
-            <UsageStat
               icon={Bot}
-              label="Agents"
+              label="AI agents"
               value={current?.maxAgents == null ? `${usage.agents}` : `${usage.agents} / ${current?.maxAgents}`}
               tone="info"
+              className="border-b border-border sm:border-b-0 sm:border-r"
+            />
+            <UsageStat
+              icon={Users}
+              label="Team members"
+              value={current?.maxMembers == null ? `${usage.members}` : `${usage.members} / ${current?.maxMembers}`}
+              tone="brand"
             />
           </CardContent>
         </Card>
@@ -186,8 +179,9 @@ export default function Plans() {
       <div className="flex items-start gap-2.5 rounded-lg border border-border bg-surface-secondary p-4 text-[13px] text-muted-foreground">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-info-500" />
         <p>
-          Payments aren&apos;t connected yet — selecting a paid plan activates it in demo mode and
-          applies its credit allotment without charging. Wire a payment provider (e.g. Stripe) to
+          You bring your own API keys, so leads and calls are unlimited — plans are just a flat
+          platform fee for access and team seats. Payments aren&apos;t connected yet: selecting a
+          plan activates it in demo mode without charging. Wire a payment provider (e.g. Stripe) to
           take real payments.
         </p>
       </div>

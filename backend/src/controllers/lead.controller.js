@@ -1,12 +1,11 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { Lead } from '../models/Lead.js';
-import { User } from '../models/User.js';
 import { Agent } from '../models/Agent.js';
 import { findLeads } from '../services/leadProvider.service.js';
 import { scoreLeads } from '../services/gemini.service.js';
 import { isValidPhone, normalizePhone } from '../utils/phone.js';
-import { getBillingAccount, resolveWorkspaceKeys } from '../services/workspace.service.js';
+import { resolveWorkspaceKeys } from '../services/workspace.service.js';
 
 const dedupeKey = (l) =>
   `${(l.businessName || '').toLowerCase().trim()}|${(l.phone || '').replace(/\D/g, '')}`;
@@ -15,14 +14,6 @@ const dedupeKey = (l) =>
 export const searchLeads = asyncHandler(async (req, res) => {
   const q = req.body;
   const user = req.user;
-  // Credits are billed to the workspace owner (members spend the owner's pool).
-  const billing = await getBillingAccount(user);
-
-  if (billing.leadCredits < q.limit) {
-    throw ApiError.badRequest(
-      `Not enough lead credits. The workspace has ${billing.leadCredits}, this search needs ${q.limit}.`,
-    );
-  }
 
   const location = [q.city, q.state, q.country].filter(Boolean).join(', ');
 
@@ -65,7 +56,6 @@ export const searchLeads = asyncHandler(async (req, res) => {
     return res.json({
       leads: [],
       message: 'No new leads matched your filters. Try widening the criteria.',
-      creditsRemaining: billing.leadCredits,
     });
   }
 
@@ -87,16 +77,8 @@ export const searchLeads = asyncHandler(async (req, res) => {
 
   const created = await Lead.insertMany(docs);
 
-  // Consume credits from the workspace owner by the number actually stored.
-  const updated = await User.findByIdAndUpdate(
-    billing._id,
-    { $inc: { leadCredits: -created.length } },
-    { new: true },
-  );
-
   res.status(201).json({
     leads: created,
-    creditsRemaining: updated.leadCredits,
     scoreSource: scores[0]?.source || 'fallback',
   });
 });

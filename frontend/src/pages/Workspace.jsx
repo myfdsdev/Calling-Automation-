@@ -114,8 +114,8 @@ function InviteDialog({ open, onOpenChange, canInviteAdmins }) {
         <DialogHeader>
           <DialogTitle>Invite a member</DialogTitle>
           <DialogDescription>
-            They&apos;ll join this workspace and share its credits &amp; plan. Their leads and calls
-            stay private to them.
+            They&apos;ll join this workspace under its plan. Their leads and calls stay private to
+            them.
           </DialogDescription>
         </DialogHeader>
 
@@ -248,8 +248,8 @@ export default function Workspace() {
       <div className="flex items-start gap-2.5 rounded-lg border border-border bg-surface-secondary p-4 text-[13px] text-muted-foreground">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-info-500" />
         <p>
-          Members share this workspace&apos;s <span className="font-medium text-foreground">credits and plan</span> —
-          all usage is billed to the owner. Each member&apos;s{' '}
+          Members work under this workspace&apos;s <span className="font-medium text-foreground">plan and API keys</span> —
+          the owner pays the platform fee. Each member&apos;s{' '}
           <span className="font-medium text-foreground">agents, leads and calls stay private</span> to them.
         </p>
       </div>

@@ -7,8 +7,6 @@ import {
   Users,
   PhoneCall,
   Menu,
-  Coins,
-  Timer,
   User,
   Settings,
   LogOut,
@@ -41,27 +39,6 @@ const NAV = [
   { to: '/leads', label: 'Leads', icon: Users },
   { to: '/calls', label: 'Calls', icon: PhoneCall },
 ];
-
-function CreditPills({ user }) {
-  return (
-    <div className="hidden items-center gap-2 lg:flex">
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full border border-graphite-700 bg-graphite-800 px-3 py-1.5 text-xs font-medium text-graphite-300"
-        title="Remaining lead credits"
-      >
-        <Coins className="h-3.5 w-3.5 text-brand-400" />
-        {user?.leadCredits ?? 0} credits
-      </span>
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full border border-graphite-700 bg-graphite-800 px-3 py-1.5 text-xs font-medium text-graphite-300"
-        title="Remaining calling minutes"
-      >
-        <Timer className="h-3.5 w-3.5 text-brand-400" />
-        {user?.callingMinutes ?? 0} min
-      </span>
-    </div>
-  );
-}
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -115,8 +92,6 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <CreditPills user={user} />
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="hidden items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-graphite-800 md:flex">
@@ -220,16 +195,8 @@ export function Navbar() {
                 ))}
               </nav>
 
-              {/* Credits + minutes + account */}
+              {/* Account links */}
               <div className="flex-shrink-0 space-y-3 border-t border-graphite-700 px-3 py-4">
-                <div className="flex flex-wrap gap-2 px-1">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-graphite-700 bg-graphite-800 px-3 py-1.5 text-xs font-medium text-graphite-300">
-                    <Coins className="h-3.5 w-3.5 text-brand-400" /> {user?.leadCredits ?? 0} credits
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-graphite-700 bg-graphite-800 px-3 py-1.5 text-xs font-medium text-graphite-300">
-                    <Timer className="h-3.5 w-3.5 text-brand-400" /> {user?.callingMinutes ?? 0} min
-                  </span>
-                </div>
                 <div className="flex flex-col gap-1">
                   <Link
                     to="/account"

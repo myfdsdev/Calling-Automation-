@@ -47,7 +47,6 @@ import {
 } from '@/components/ui/dialog';
 import { api, getErrorMessage } from '@/lib/api';
 import { useAgents } from '@/hooks/queries';
-import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
 // The country/state/city dataset is heavy (~all world cities), so load it only
@@ -60,7 +59,6 @@ const AVG_MIN_PER_CALL = 2;
 
 export default function LeadFinder() {
   const navigate = useNavigate();
-  const { patchUser } = useAuth();
   const { data: agents } = useAgents();
   const activeAgents = useMemo(() => (agents || []).filter((a) => a.status === 'active'), [agents]);
 
@@ -103,9 +101,6 @@ export default function LeadFinder() {
     onSuccess: (data) => {
       setResults(data.leads || []);
       setSelected(new Set());
-      if (typeof data.creditsRemaining === 'number') {
-        patchUser({ leadCredits: data.creditsRemaining });
-      }
       if (!data.leads?.length) {
         toast.info(data.message || 'No new leads matched your filters.');
       } else {

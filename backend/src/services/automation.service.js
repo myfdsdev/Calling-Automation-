@@ -6,7 +6,7 @@ import { User } from '../models/User.js';
 import * as vapi from './vapi.service.js';
 import { analyzeCall } from './gemini.service.js';
 import { isDbConnected } from '../config/db.js';
-import { getBillingAccount, resolveWorkspaceKeys, resolveVapiKey } from './workspace.service.js';
+import { resolveWorkspaceKeys, resolveVapiKey } from './workspace.service.js';
 
 /** Resolve the Gemini creds for a call's workspace (for background analysis). */
 async function geminiCredsForCall(call) {
@@ -410,16 +410,6 @@ export async function applyCallResult({
       lead.callStatus = 'completed';
     }
     await lead.save();
-  }
-
-  // Consume calling minutes from the workspace owner (members spend the owner's pool).
-  if (duration > 0) {
-    const minutes = Math.max(1, Math.ceil(duration / 60));
-    const caller = await User.findById(call.userId);
-    const billing = caller ? await getBillingAccount(caller) : null;
-    if (billing) {
-      await User.findByIdAndUpdate(billing._id, { $inc: { callingMinutes: -minutes } });
-    }
   }
 }
 
