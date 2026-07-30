@@ -8,7 +8,6 @@ import {
   Power,
   Trash2,
   PhoneOutgoing,
-  Mic,
   Globe,
   Target,
   MoreVertical,
@@ -44,9 +43,8 @@ import { AgentFormDialog } from '@/pages/partials/AgentFormDialog';
 import { AgentBuilderChat } from '@/pages/partials/AgentBuilderChat';
 import { useAgents, useAgentMutations } from '@/hooks/queries';
 import { getErrorMessage } from '@/lib/api';
-import { VOICES, LANGUAGES } from '@/lib/constants';
+import { LANGUAGES } from '@/lib/constants';
 
-const voiceLabel = (id) => VOICES.find((v) => v.id === id)?.label?.split(' (')[0] || id;
 const langLabel = (id) => LANGUAGES.find((l) => l.id === id)?.label || id;
 
 /**
@@ -146,7 +144,6 @@ function AgentCard({ agent, onEdit, onTest, onToggle, onDelete }) {
 
       {/* 3. Metadata chips */}
       <div className="mt-4 flex flex-wrap gap-2">
-        <Chip icon={Mic} label="Voice:" value={voiceLabel(agent.voiceId)} />
         <Chip icon={Globe} value={langLabel(agent.language)} />
         {agent.serviceName ? (
           <Chip icon={Target} label="Service:" value={agent.serviceName} title={agent.serviceName} />
@@ -235,9 +232,6 @@ function TestAgentDialog({ agent, open, onOpenChange }) {
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="primary">
-                <Mic className="h-3 w-3" /> {preview.voiceId || '—'}
-              </Badge>
               <Badge variant="neutral">
                 <Globe className="h-3 w-3" /> {langLabel(preview.language)}
               </Badge>

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { useAgentMutations } from '@/hooks/queries';
 import { getErrorMessage } from '@/lib/api';
-import { VOICES, LANGUAGES, DEFAULT_VOICE } from '@/lib/constants';
+import { LANGUAGES, DEFAULT_VOICE } from '@/lib/constants';
 
 const EMPTY = {
   name: '',
@@ -169,41 +169,22 @@ export function AgentFormDialog({ open, onOpenChange, agent, prefill }) {
                 <Label htmlFor="businessLocation">Business location</Label>
                 <Input id="businessLocation" placeholder="Bandra, Mumbai" {...register('businessLocation')} />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Language</Label>
-                  <Controller
-                    control={control}
-                    name="language"
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Language" /></SelectTrigger>
-                        <SelectContent>
-                          {LANGUAGES.map((l) => (
-                            <SelectItem key={l.id} value={l.id}>{l.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Voice</Label>
-                  <Controller
-                    control={control}
-                    name="voiceId"
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Voice" /></SelectTrigger>
-                        <SelectContent>
-                          {VOICES.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <Label>Language</Label>
+                <Controller
+                  control={control}
+                  name="language"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger><SelectValue placeholder="Language" /></SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>{l.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </TabsContent>
 
