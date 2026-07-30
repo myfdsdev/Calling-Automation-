@@ -60,11 +60,28 @@ export const env = {
 
   cloudinaryUrl: process.env.CLOUDINARY_URL || '',
 
+  // Transactional email (password resets) via Resend.
+  resend: {
+    apiKey: process.env.RESEND_API_KEY || '',
+    // Verified sender on your Resend domain, e.g. "LeadCall AI <noreply@yourdomain.com>".
+    from: process.env.RESEND_FROM || '',
+  },
+
   defaults: {
     leadCredits: toInt(process.env.DEFAULT_LEAD_CREDITS, 500),
     callingMinutes: toInt(process.env.DEFAULT_CALLING_MINUTES, 120),
   },
 };
+
+/**
+ * The public app URL used to build links inside emails. Prefers a deployed
+ * https:// origin from CLIENT_URL (so reset links point at production, not
+ * localhost), falling back to the first configured client URL.
+ */
+export const appUrl =
+  env.clientUrls.find((u) => u.startsWith('https://')) ||
+  env.clientUrls[0] ||
+  'http://localhost:5173';
 
 /**
  * Platform-level feature flags.

@@ -21,6 +21,15 @@ export const googleAuthSchema = z.object({
   companyName: z.string().max(120).optional().default(''),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(10, 'Invalid or missing reset token'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+});
+
 /* ---------------- Workspace / team ---------------- */
 export const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email'),

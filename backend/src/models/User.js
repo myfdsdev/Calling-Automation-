@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     passwordHash: { type: String, required: true, select: false },
+    // Password reset: a SHA-256 hash of the emailed token (never the raw token),
+    // plus its expiry. Both are never sent to the client.
+    resetPasswordToken: { type: String, default: '', select: false },
+    resetPasswordExpires: { type: Date, default: null, select: false },
     googleId: { type: String, unique: true, sparse: true, trim: true },
     companyName: { type: String, trim: true, default: '' },
     leadCredits: { type: Number, default: env.defaults.leadCredits },

@@ -48,6 +48,13 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  /** Establish a session from a { token, user } response (e.g. after a password reset). */
+  const applySession = ({ token, user: sessionUser }) => {
+    setToken(token);
+    setUser(sessionUser);
+    return sessionUser;
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -60,7 +67,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, googleAuth, logout, refreshUser, patchUser }}
+      value={{ user, loading, login, register, googleAuth, applySession, logout, refreshUser, patchUser }}
     >
       {children}
     </AuthContext.Provider>

@@ -80,7 +80,12 @@ export default function Login() {
           {errors.email ? <p className="text-xs text-destructive">{errors.email.message}</p> : null}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <PasswordInput id="password" placeholder="••••••••" {...register('password')} />
           {errors.password ? (
             <p className="text-xs text-destructive">{errors.password.message}</p>
