@@ -172,9 +172,9 @@ export default function Dashboard() {
         <>
           {autoQ.data ? <CurrentAutomation automation={autoQ.data} /> : null}
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* Recent leads */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>Recent Leads</CardTitle>
                 <Button asChild variant="ghost" size="sm">
@@ -214,7 +214,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Recent calls */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>Recent Calls</CardTitle>
                 <Button asChild variant="ghost" size="sm">

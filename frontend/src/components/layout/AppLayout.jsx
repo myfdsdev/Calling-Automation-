@@ -6,7 +6,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="page-container">
+      <main className="page-container overflow-x-hidden">
         <Outlet />
       </main>
       <ApiKeysOnboarding />
