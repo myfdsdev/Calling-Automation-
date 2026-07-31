@@ -18,7 +18,7 @@ export function Logo({ className, light = false }) {
   if (!failed) {
     return (
       <img
-        src="/LeadDialer.png"
+        src="/LeadDialer-original.png"
         alt="LeadCall AI"
         onError={() => setFailed(true)}
         className={cn('h-9 w-auto object-contain', className)}
