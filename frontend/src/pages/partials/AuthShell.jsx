@@ -1,4 +1,5 @@
-import { PhoneCall, Bot, Search, PhoneOutgoing, LineChart, ShieldCheck } from 'lucide-react';
+import { Bot, Search, PhoneOutgoing, LineChart, ShieldCheck } from 'lucide-react';
+import { Logo } from '@/components/common/Logo';
 
 const FEATURES = [
   {
@@ -23,25 +24,12 @@ const FEATURES = [
   },
 ];
 
-function Logo({ className = '' }) {
-  return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-graphite-950">
-        <PhoneCall className="h-5 w-5" />
-      </span>
-      <span className="text-lg font-semibold tracking-tight">
-        LeadCall<span className="text-brand-500"> AI</span>
-      </span>
-    </div>
-  );
-}
-
 export function AuthShell({ title, subtitle, children }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* Left: brand panel (graphite with amber accents) */}
       <div className="relative hidden flex-col overflow-hidden bg-graphite-900 p-10 text-white lg:flex xl:p-12">
-        <Logo />
+        <Logo light className="h-auto w-52 self-start" />
 
         {/* Value prop + feature cards */}
         <div className="my-auto max-w-[460px] space-y-8 py-10">
@@ -90,7 +78,7 @@ export function AuthShell({ title, subtitle, children }) {
       {/* Right: form */}
       <div className="flex items-center justify-center bg-background px-4 py-12 sm:px-6">
         <div className="w-full max-w-[420px]">
-          <Logo className="mb-10 lg:hidden" />
+          <Logo className="mb-10 h-9 lg:hidden" />
 
           <div className="space-y-1.5">
             <h1 className="text-[28px] font-bold tracking-[-0.02em] text-foreground">{title}</h1>

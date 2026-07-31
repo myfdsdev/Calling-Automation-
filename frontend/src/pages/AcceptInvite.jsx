@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { PhoneCall, Loader2, Users, AlertTriangle, LogIn, UserPlus, Check } from 'lucide-react';
+import { Loader2, Users, AlertTriangle, LogIn, UserPlus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/common/Logo';
 import { api, getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -13,13 +14,8 @@ function Shell({ children }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-graphite-950">
-            <PhoneCall className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-semibold tracking-tight">
-            LeadCall<span className="text-brand-500"> AI</span>
-          </span>
+        <div className="mb-8 flex items-center justify-center">
+          <Logo className="h-10" />
         </div>
         <div className="rounded-panel border border-border bg-card p-8 shadow-card">{children}</div>
       </div>

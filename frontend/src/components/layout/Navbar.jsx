@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/common/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn, initials } from '@/lib/utils';
 
@@ -67,13 +68,8 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b border-graphite-700 bg-graphite-900">
       <div className="mx-auto flex h-16 max-w-content items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-graphite-950">
-            <PhoneCall className="h-5 w-5" />
-          </span>
-          <span className="text-base font-semibold tracking-tight text-white">
-            LeadCall<span className="text-brand-500"> AI</span>
-          </span>
+        <Link to="/" className="flex items-center">
+          <Logo light className="h-8" />
         </Link>
 
         {/* Desktop nav */}
@@ -163,15 +159,10 @@ export function Navbar() {
               <div className="flex h-16 flex-shrink-0 items-center border-b border-graphite-700 px-4">
                 <Link
                   to="/"
-                  className="flex items-center gap-2.5"
+                  className="flex items-center"
                   onClick={() => setMobileOpen(false)}
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-graphite-950">
-                    <PhoneCall className="h-5 w-5" />
-                  </span>
-                  <span className="text-base font-semibold tracking-tight text-white">
-                    LeadCall<span className="text-brand-500"> AI</span>
-                  </span>
+                  <Logo light className="h-8" />
                 </Link>
               </div>
 
