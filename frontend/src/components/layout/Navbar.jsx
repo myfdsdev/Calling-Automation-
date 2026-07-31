@@ -69,7 +69,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-content items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <Logo light className="h-11" />
+          <Logo light className="h-14 w-52 object-cover object-center" />
         </Link>
 
         {/* Desktop nav */}
@@ -162,7 +162,7 @@ export function Navbar() {
                   className="flex items-center"
                   onClick={() => setMobileOpen(false)}
                 >
-                  <Logo light className="h-11" />
+                  <Logo light className="h-14 w-52 object-cover object-center" />
                 </Link>
               </div>
 
