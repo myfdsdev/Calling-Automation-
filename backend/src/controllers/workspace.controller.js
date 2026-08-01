@@ -13,7 +13,6 @@ import {
   moveToOwnWorkspace,
   buildSessionPayload,
 } from '../services/workspace.service.js';
-import { assertMemberQuota } from './plan.controller.js';
 
 function memberJSON(u, meId, ownerId) {
   return {
@@ -81,8 +80,6 @@ export const createInvite = asyncHandler(async (req, res) => {
   if (!canManageMembers(req.user.workspaceRole)) {
     throw ApiError.forbidden('You do not have permission to invite members');
   }
-  // Enforce the plan's team-seat limit (members + pending invites).
-  await assertMemberQuota(req.user);
   const { email, role } = req.body;
 
   if (email === req.user.email.toLowerCase()) {

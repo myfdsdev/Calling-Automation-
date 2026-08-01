@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { env } from '../config/env.js';
 import { mask } from '../utils/crypto.js';
-import { getPlan } from '../config/plans.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -22,16 +20,10 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date, default: null, select: false },
     googleId: { type: String, unique: true, sparse: true, trim: true },
     companyName: { type: String, trim: true, default: '' },
-    leadCredits: { type: Number, default: env.defaults.leadCredits },
-    callingMinutes: { type: Number, default: env.defaults.callingMinutes },
-
-    // Subscription tier (see backend/src/config/plans.js). Free by default.
-    plan: { type: String, default: 'free' },
-    planActivatedAt: { type: Date, default: null },
 
     // Workspace membership. Owner of their own workspace by default; members are
-    // moved into someone else's workspace when they accept an invite. Credits &
-    // plan are billed to the workspace owner; data stays isolated per user.
+    // moved into someone else's workspace when they accept an invite; data stays
+    // isolated per user.
     workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace', default: null },
     workspaceRole: { type: String, enum: ['owner', 'admin', 'member'], default: 'owner' },
 
@@ -68,16 +60,11 @@ userSchema.methods.canCall = function canCall() {
 };
 
 userSchema.methods.toSafeJSON = function toSafeJSON() {
-  const plan = getPlan(this.plan);
   return {
     id: this._id,
     name: this.name,
     email: this.email,
     companyName: this.companyName,
-    leadCredits: this.leadCredits,
-    callingMinutes: this.callingMinutes,
-    plan: { id: plan.id, name: plan.name, maxAgents: plan.maxAgents },
-    planActivatedAt: this.planActivatedAt,
     createdAt: this.createdAt,
     // Connection state only — never the credentials themselves.
     telephony: {

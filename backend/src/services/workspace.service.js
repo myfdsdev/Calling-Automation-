@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import { User } from '../models/User.js';
 import { Workspace } from '../models/Workspace.js';
 import { Invite } from '../models/Invite.js';
-import { getPlan } from '../config/plans.js';
 import { env } from '../config/env.js';
 import { decryptSecret } from '../utils/crypto.js';
 
@@ -22,11 +21,11 @@ export async function ensureWorkspace(user) {
 }
 
 /**
- * Resolve the account that should be BILLED for a user's actions (lead credits,
- * calling minutes, plan limits). Members bill the workspace owner; owners bill
- * themselves. Returns a User document.
+ * Resolve the account that OWNS a user's workspace (and its shared API keys).
+ * Members resolve to the workspace owner; owners resolve to themselves. Returns
+ * a User document.
  */
-export async function getBillingAccount(user) {
+export async function getWorkspaceOwner(user) {
   if (!user.workspaceId || user.workspaceRole === 'owner') return user;
   const ws = await Workspace.findById(user.workspaceId);
   if (!ws || String(ws.ownerId) === String(user._id)) return user;
@@ -34,22 +33,17 @@ export async function getBillingAccount(user) {
   return owner || user;
 }
 
-/** Session payload — credits/plan reflect the billing owner (what the user spends). */
+/** Session payload — includes the user's workspace/role for the frontend. */
 export async function buildSessionPayload(user) {
-  const billing = await getBillingAccount(user);
-  const isOwner = String(billing._id) === String(user._id);
-  const plan = getPlan(billing.plan);
+  const owner = await getWorkspaceOwner(user);
+  const isOwner = String(owner._id) === String(user._id);
   return {
     ...user.toSafeJSON(),
-    // Override with the billing owner's shared pool.
-    leadCredits: billing.leadCredits,
-    callingMinutes: billing.callingMinutes,
-    plan: { id: plan.id, name: plan.name, maxAgents: plan.maxAgents },
     workspace: {
       id: user.workspaceId || null,
       role: user.workspaceRole || 'owner',
       isOwner,
-      ownerName: isOwner ? null : billing.name,
+      ownerName: isOwner ? null : owner.name,
     },
   };
 }
@@ -61,16 +55,16 @@ export async function getMembers(workspaceId) {
   });
 }
 
-/** User ids of everyone in the billing account's workspace (for shared limits). */
+/** User ids of everyone in the user's workspace (for shared data scope). */
 export async function getWorkspaceMemberIds(user) {
   await ensureWorkspace(user);
-  const billing = await getBillingAccount(user);
-  const wsId = billing.workspaceId || user.workspaceId;
+  const owner = await getWorkspaceOwner(user);
+  const wsId = owner.workspaceId || user.workspaceId;
   const members = await User.find({ workspaceId: wsId }).select('_id');
   const ids = members.map((m) => m._id);
-  // Always include the billing owner even if their workspaceId wasn't backfilled.
-  if (!ids.some((id) => String(id) === String(billing._id))) ids.push(billing._id);
-  return { ownerId: billing._id, memberIds: ids };
+  // Always include the workspace owner even if their workspaceId wasn't backfilled.
+  if (!ids.some((id) => String(id) === String(owner._id))) ids.push(owner._id);
+  return { ownerId: owner._id, memberIds: ids };
 }
 
 export const canManageMembers = (role) => role === 'owner' || role === 'admin';

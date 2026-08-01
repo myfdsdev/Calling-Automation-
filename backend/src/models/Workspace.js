@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
 /**
- * A workspace groups a billing owner with the members they invite. Data stays
- * isolated per-user (each member sees only their own agents/leads/calls), but
- * credits & the plan are drawn from the OWNER's account.
+ * A workspace groups an owner with the members they invite. Data stays isolated
+ * per-user (each member sees only their own agents/leads/calls), while the API
+ * keys are shared and drawn from the OWNER's account.
  */
 // One connected external API key. `cipher` is AES-256-GCM ciphertext (never sent
 // to the client); `last4` + `connectedAt` are display-only metadata.

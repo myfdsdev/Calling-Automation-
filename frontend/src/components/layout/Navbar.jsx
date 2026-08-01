@@ -10,7 +10,6 @@ import {
   User,
   Settings,
   LogOut,
-  Sparkles,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -115,11 +114,6 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/plans">
-                  <Sparkles className="h-4 w-4" /> Plans &amp; Billing
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
                 <Link to="/api-settings">
                   <Settings className="h-4 w-4" /> API Settings
                 </Link>
@@ -202,13 +196,6 @@ export function Navbar() {
                     className={drawerLinkClass({ isActive: false })}
                   >
                     <Users className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Workspace
-                  </Link>
-                  <Link
-                    to="/plans"
-                    onClick={() => setMobileOpen(false)}
-                    className={drawerLinkClass({ isActive: false })}
-                  >
-                    <Sparkles className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Plans &amp; Billing
                   </Link>
                   <Link
                     to="/api-settings"

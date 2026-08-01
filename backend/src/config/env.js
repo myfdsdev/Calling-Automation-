@@ -66,11 +66,6 @@ export const env = {
     // Verified sender on your Resend domain, e.g. "LeadCall AI <noreply@yourdomain.com>".
     from: process.env.RESEND_FROM || '',
   },
-
-  defaults: {
-    leadCredits: toInt(process.env.DEFAULT_LEAD_CREDITS, 500),
-    callingMinutes: toInt(process.env.DEFAULT_CALLING_MINUTES, 120),
-  },
 };
 
 /**
