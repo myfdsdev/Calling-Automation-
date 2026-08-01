@@ -72,7 +72,7 @@ export default function Login() {
   );
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to your LeadCall AI workspace.">
+    <AuthShell title="Welcome back" subtitle="Sign in to your LeadDialer AI workspace.">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
