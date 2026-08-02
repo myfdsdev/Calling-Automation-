@@ -1,5 +1,16 @@
 import { ApiError } from '../utils/ApiError.js';
-import { hasFeature, canWrite } from '../services/entitlements.service.js';
+import { hasFeature, canWrite, hasAppAccess } from '../services/entitlements.service.js';
+
+/**
+ * Invite-only gate: block anyone without app access (a plain self-signup who is
+ * neither an admin nor an invited member). Must run after requireAuth.
+ */
+export const requireAppAccess = (req, _res, next) => {
+  if (hasAppAccess(req.user)) return next();
+  next(
+    ApiError.forbidden('Access denied. This app is invite-only — ask an admin to invite you.'),
+  );
+};
 
 /**
  * Gate a route behind a feature the user's entitlements must include. Owners

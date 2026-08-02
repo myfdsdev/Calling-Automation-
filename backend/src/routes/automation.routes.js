@@ -9,12 +9,13 @@ import {
   stopAutomation,
 } from '../controllers/automation.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { requireFeature, requireEditor } from '../middleware/entitlements.js';
+import { requireFeature, requireEditor, requireAppAccess } from '../middleware/entitlements.js';
 import { validate } from '../middleware/validate.js';
 import { automationSchema } from '../validators/schemas.js';
 
 const router = Router();
 router.use(requireAuth);
+router.use(requireAppAccess);
 router.use(requireFeature('automations'));
 
 router.post('/', requireEditor, validate(automationSchema), createAutomation);

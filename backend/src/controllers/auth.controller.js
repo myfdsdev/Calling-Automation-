@@ -25,6 +25,25 @@ export const register = asyncHandler(async (req, res) => {
   res.status(201).json({ token, user: await buildSessionPayload(user) });
 });
 
+/**
+ * Register an Admin account (from the public /register-admin page). Admins own a
+ * workspace and can invite users and grant features. Plain /register accounts
+ * have no app access until an admin invites them.
+ */
+export const registerAdmin = asyncHandler(async (req, res) => {
+  const { name, email, password, companyName } = req.body;
+
+  const existing = await User.findOne({ email });
+  if (existing) throw ApiError.conflict('An account with this email already exists');
+
+  const passwordHash = await User.hashPassword(password);
+  const user = await User.create({ name, email, companyName, passwordHash, isAdmin: true });
+  await ensureWorkspace(user);
+
+  const token = signToken(user._id);
+  res.status(201).json({ token, user: await buildSessionPayload(user) });
+});
+
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -40,7 +59,7 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const googleAuth = asyncHandler(async (req, res) => {
-  const { credential, companyName } = req.body;
+  const { credential, companyName, asAdmin } = req.body;
   const profile = await verifyGoogleIdToken(credential);
 
   let user = await User.findOne({
@@ -56,6 +75,8 @@ export const googleAuth = asyncHandler(async (req, res) => {
     if (!user.name) user.name = profile.name;
     await user.save();
   } else {
+    // New account via Google — only becomes an admin when signing up from the
+    // admin page (asAdmin). Existing accounts keep their current status.
     const passwordHash = await User.hashPassword(crypto.randomUUID());
     user = await User.create({
       name: profile.name,
@@ -63,6 +84,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
       googleId: profile.googleId,
       companyName,
       passwordHash,
+      isAdmin: Boolean(asAdmin),
     });
     status = 201;
   }

@@ -9,7 +9,6 @@ import { testGeminiKey } from '../services/gemini.service.js';
 import { testSerpApiKey } from '../services/leadProvider.service.js';
 import {
   ensureWorkspace,
-  canManageMembers,
   apiKeysStatus,
   resolveVapiKey,
   getWorkspaceMemberIds,
@@ -230,7 +229,7 @@ export const getApiKeys = asyncHandler(async (req, res) => {
   const ws = await Workspace.findById(req.user.workspaceId);
   res.json({
     apiKeys: apiKeysStatus(ws),
-    canManage: canManageMembers(req.user.workspaceRole),
+    canManage: Boolean(req.user.isAdmin),
   });
 });
 
@@ -245,8 +244,8 @@ export const connectApiKeys = asyncHandler(async (req, res) => {
     );
   }
   await ensureWorkspace(req.user);
-  if (!canManageMembers(req.user.workspaceRole)) {
-    throw ApiError.forbidden('Only the workspace owner or an admin can manage API keys');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can manage API keys');
   }
 
   const ws = await Workspace.findById(req.user.workspaceId);
@@ -296,8 +295,8 @@ export const connectApiKeys = asyncHandler(async (req, res) => {
 /** Disconnect a single workspace API key. */
 export const disconnectApiKey = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (!canManageMembers(req.user.workspaceRole)) {
-    throw ApiError.forbidden('Only the workspace owner or an admin can manage API keys');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can manage API keys');
   }
   const service = req.params.service;
   if (!['gemini', 'serpapi', 'vapi'].includes(service)) throw ApiError.badRequest('Unknown service');

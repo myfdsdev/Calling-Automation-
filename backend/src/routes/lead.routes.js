@@ -10,7 +10,7 @@ import {
   deleteLead,
 } from '../controllers/lead.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { requireFeature, requireEditor } from '../middleware/entitlements.js';
+import { requireFeature, requireEditor, requireAppAccess } from '../middleware/entitlements.js';
 import { validate } from '../middleware/validate.js';
 import {
   leadSearchSchema,
@@ -22,6 +22,7 @@ import {
 
 const router = Router();
 router.use(requireAuth);
+router.use(requireAppAccess);
 
 // Discovering leads is the Lead Finder feature; everything else is Leads.
 router.post('/search', requireFeature('lead_finder'), requireEditor, validate(leadSearchSchema), searchLeads);

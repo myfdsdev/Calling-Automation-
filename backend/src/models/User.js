@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date, default: null, select: false },
     googleId: { type: String, unique: true, sparse: true, trim: true },
     companyName: { type: String, trim: true, default: '' },
+    // Admins register via /register-admin, own a workspace, and can invite users
+    // and grant features. A non-admin who signs up normally has NO app access
+    // until an admin invites them (invite-only model).
+    isAdmin: { type: Boolean, default: false },
 
     // Workspace membership. `workspaceId` is the user's ACTIVE workspace context:
     // owner of their own by default; moved into someone else's when they accept an

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -69,7 +69,17 @@ export default function Register() {
   );
 
   return (
-    <AuthShell title="Create your account" subtitle="Start finding leads and calling them in minutes.">
+    <AuthShell
+      title="Create your account"
+      subtitle="Sign up to accept a workspace invitation from your admin."
+    >
+      <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-border bg-surface-secondary p-3 text-[13px] text-muted-foreground">
+        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-info-500" />
+        <p>
+          This app is invite-only. After signing up, open your invite link to join. Don&apos;t have
+          an invite? Ask an admin, or create an Admin workspace below.
+        </p>
+      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="name">Full name</Label>

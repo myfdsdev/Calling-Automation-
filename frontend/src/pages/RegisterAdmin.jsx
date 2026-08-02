@@ -28,7 +28,7 @@ const PERKS = [
 ];
 
 export default function RegisterAdmin() {
-  const { register: registerUser, googleAuth } = useAuth();
+  const { registerAdmin, googleAuth } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
@@ -46,7 +46,7 @@ export default function RegisterAdmin() {
   const onSubmit = async (values) => {
     setSubmitting(true);
     try {
-      await registerUser(values);
+      await registerAdmin(values);
       toast.success('Admin workspace ready — invite your team from the Users page.');
       navigate('/', { replace: true });
     } catch (err) {
@@ -60,7 +60,7 @@ export default function RegisterAdmin() {
     async (credential) => {
       setGoogleSubmitting(true);
       try {
-        await googleAuth({ credential, companyName: getValues('companyName') || '' });
+        await googleAuth({ credential, companyName: getValues('companyName') || '', asAdmin: true });
         toast.success('Admin workspace ready — invite your team from the Users page.');
         navigate('/', { replace: true });
       } catch (err) {

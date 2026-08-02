@@ -41,6 +41,13 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  const registerAdmin = async (payload) => {
+    const { data } = await api.post('/auth/register-admin', payload);
+    setToken(data.token);
+    setUser(data.user);
+    return data.user;
+  };
+
   const googleAuth = async (payload) => {
     const { data } = await api.post('/auth/google', payload);
     setToken(data.token);
@@ -67,13 +74,13 @@ export function AuthProvider({ children }) {
   // Workspace context + feature entitlements, derived from the session payload.
   const role = user?.workspace?.role || 'owner';
   const isOwner = user ? user.workspace?.isOwner ?? true : false;
+  const isAdmin = Boolean(user?.isAdmin);
+  const hasAppAccess = user ? Boolean(user.hasAppAccess) : false;
+  const pendingInviteToken = user?.pendingInviteToken || null;
   const canWrite = user ? user.workspace?.canWrite ?? true : false;
   const entitlements = user?.entitlements || [];
-  // Owners implicitly have every feature; members are gated to their grants.
-  const hasFeature = useCallback(
-    (key) => isOwner || entitlements.includes(key),
-    [isOwner, entitlements],
-  );
+  // Gated to the exact features the session payload resolved (admins get all).
+  const hasFeature = useCallback((key) => entitlements.includes(key), [entitlements]);
 
   return (
     <AuthContext.Provider
@@ -82,6 +89,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         register,
+        registerAdmin,
         googleAuth,
         applySession,
         logout,
@@ -89,6 +97,9 @@ export function AuthProvider({ children }) {
         patchUser,
         role,
         isOwner,
+        isAdmin,
+        hasAppAccess,
+        pendingInviteToken,
         canWrite,
         entitlements,
         hasFeature,

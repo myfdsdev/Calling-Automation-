@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { PhoneCall } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import AccessDenied from '@/pages/AccessDenied';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -21,6 +22,11 @@ export function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Invite-only: signed in but no app access (a plain self-signup, not yet invited).
+  if (!user.hasAppAccess) {
+    return <AccessDenied />;
   }
 
   return children;

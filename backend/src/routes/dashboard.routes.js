@@ -6,9 +6,11 @@ import {
   getActiveAutomation,
 } from '../controllers/dashboard.controller.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireAppAccess } from '../middleware/entitlements.js';
 
 const router = Router();
 router.use(requireAuth);
+router.use(requireAppAccess);
 
 router.get('/stats', getStats);
 router.get('/recent-leads', getRecentLeads);

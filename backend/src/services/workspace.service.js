@@ -4,7 +4,7 @@ import { Workspace } from '../models/Workspace.js';
 import { Invite } from '../models/Invite.js';
 import { env } from '../config/env.js';
 import { decryptSecret } from '../utils/crypto.js';
-import { getUserEntitlements, canWrite } from './entitlements.service.js';
+import { getUserEntitlements, canWrite, hasAppAccess } from './entitlements.service.js';
 
 const INVITE_TTL_DAYS = 7;
 
@@ -42,14 +42,33 @@ export async function buildSessionPayload(user) {
   const owner = await getWorkspaceOwner(user);
   const isOwner = String(owner._id) === String(user._id);
   const role = user.workspaceRole || 'owner';
+  const isAdmin = Boolean(user.isAdmin);
+  const access = hasAppAccess(user);
+
+  // If they can't get in, surface any pending invite so the Access Denied screen
+  // can offer a one-click "accept invitation".
+  let pendingInviteToken = null;
+  if (!access) {
+    const inv = await Invite.findOne({
+      email: user.email,
+      status: 'pending',
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
+    pendingInviteToken = inv?.token || null;
+  }
+
   return {
     ...user.toSafeJSON(),
+    isAdmin,
+    hasAppAccess: access,
+    pendingInviteToken,
     workspace: {
       id: user.workspaceId || null,
       role,
       isOwner,
       ownerName: isOwner ? null : owner.name,
-      canManageMembers: canManageMembers(role),
+      // Only admins manage the workspace (invite, grant features, edit keys).
+      canManageMembers: isAdmin,
       canWrite: canWrite(user),
       assignedFeatures: Array.isArray(user.assignedFeatures) ? user.assignedFeatures : [],
     },

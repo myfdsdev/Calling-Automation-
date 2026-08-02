@@ -19,6 +19,8 @@ export const loginSchema = z.object({
 export const googleAuthSchema = z.object({
   credential: z.string().min(20, 'Google sign-in token is required'),
   companyName: z.string().max(120).optional().default(''),
+  // True only when signing up from the admin page.
+  asAdmin: z.boolean().optional().default(false),
 });
 
 export const forgotPasswordSchema = z.object({

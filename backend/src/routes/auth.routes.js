@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   register,
+  registerAdmin,
   login,
   googleAuth,
   googleConfig,
@@ -21,6 +22,7 @@ import {
 const router = Router();
 
 router.post('/register', validate(registerSchema), register);
+router.post('/register-admin', validate(registerSchema), registerAdmin);
 router.post('/login', validate(loginSchema), login);
 router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', validate(resetPasswordSchema), resetPassword);

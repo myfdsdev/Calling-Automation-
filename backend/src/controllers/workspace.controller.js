@@ -8,7 +8,6 @@ import { emailReady, sendWorkspaceInviteEmail } from '../services/email.service.
 import {
   ensureWorkspace,
   getMembers,
-  canManageMembers,
   makeInviteToken,
   inviteLink,
   inviteExpiry,
@@ -65,7 +64,7 @@ export const getWorkspace = asyncHandler(async (req, res) => {
   if (!workspace) throw ApiError.notFound('Workspace not found');
 
   const myRole = req.user.workspaceRole || 'owner';
-  const canManage = canManageMembers(myRole);
+  const canManage = Boolean(req.user.isAdmin);
   const members = await getMembers(workspace._id);
 
   let invites = [];
@@ -100,8 +99,8 @@ export const getWorkspace = asyncHandler(async (req, res) => {
 
 export const renameWorkspace = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (req.user.workspaceRole !== 'owner') {
-    throw ApiError.forbidden('Only the workspace owner can rename it');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can rename the workspace');
   }
   const ws = await Workspace.findByIdAndUpdate(
     req.user.workspaceId,
@@ -113,8 +112,8 @@ export const renameWorkspace = asyncHandler(async (req, res) => {
 
 export const createInvite = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (!canManageMembers(req.user.workspaceRole)) {
-    throw ApiError.forbidden('Only the workspace owner can invite users');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can invite users');
   }
   const email = String(req.body.email || '').toLowerCase();
   const role = req.body.role === 'viewer' ? 'viewer' : 'editor';
@@ -174,8 +173,8 @@ export const createInvite = asyncHandler(async (req, res) => {
 
 export const resendInvite = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (!canManageMembers(req.user.workspaceRole)) {
-    throw ApiError.forbidden('Only the workspace owner can manage invites');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can manage invites');
   }
   const invite = await Invite.findOne({
     _id: req.params.id,
@@ -203,8 +202,8 @@ export const resendInvite = asyncHandler(async (req, res) => {
 
 export const revokeInvite = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (!canManageMembers(req.user.workspaceRole)) {
-    throw ApiError.forbidden('Only the workspace owner can manage invites');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can manage invites');
   }
   const invite = await Invite.findOne({
     _id: req.params.id,
@@ -291,8 +290,8 @@ export const acceptInvite = asyncHandler(async (req, res) => {
 
 export const changeRole = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (req.user.workspaceRole !== 'owner') {
-    throw ApiError.forbidden('Only the owner can change roles');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can change roles');
   }
   const target = await User.findOne({
     _id: req.params.userId,
@@ -310,8 +309,8 @@ export const changeRole = asyncHandler(async (req, res) => {
 /** Owner grants/updates the exact features an existing member can access. */
 export const updateMemberFeatures = asyncHandler(async (req, res) => {
   await ensureWorkspace(req.user);
-  if (req.user.workspaceRole !== 'owner') {
-    throw ApiError.forbidden('Only the owner can change feature access');
+  if (!req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can change feature access');
   }
   const target = await User.findOne({
     _id: req.params.userId,
@@ -341,9 +340,9 @@ export const removeMember = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('The workspace owner cannot be removed');
   }
 
-  // Members may remove themselves (leave); only the owner may remove others.
-  if (!isSelf && !canManageMembers(req.user.workspaceRole)) {
-    throw ApiError.forbidden('Only the workspace owner can remove users');
+  // Members may remove themselves (leave); only an admin may remove others.
+  if (!isSelf && !req.user.isAdmin) {
+    throw ApiError.forbidden('Only an admin can remove users');
   }
 
   await moveToOwnWorkspace(target);
