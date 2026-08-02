@@ -77,7 +77,7 @@ export default function Register() {
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-info-500" />
         <p>
           This app is invite-only. After signing up, open your invite link to join. Don&apos;t have
-          an invite? Ask an admin, or create an Admin workspace below.
+          an invite? Ask your admin to send you one.
         </p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
