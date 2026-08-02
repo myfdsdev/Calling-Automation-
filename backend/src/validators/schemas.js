@@ -30,16 +30,21 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters').max(128),
 });
 
-/* ---------------- Workspace / team ---------------- */
+/* ---------------- Workspace / users ---------------- */
 export const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email'),
-  role: z.enum(['admin', 'member']).optional().default('member'),
+  role: z.enum(['editor', 'viewer']).optional().default('editor'),
+  // Feature keys to grant; the controller sanitizes against the live registry.
+  assignedFeatures: z.array(z.string().max(60)).max(50).optional().default([]),
 });
 export const acceptInviteSchema = z.object({
   token: z.string().min(10, 'Invalid invite token'),
 });
 export const changeRoleSchema = z.object({
-  role: z.enum(['admin', 'member']),
+  role: z.enum(['editor', 'viewer']),
+});
+export const updateFeaturesSchema = z.object({
+  assignedFeatures: z.array(z.string().max(60)).max(50).default([]),
 });
 export const renameWorkspaceSchema = z.object({
   name: z.string().trim().min(2, 'Workspace name is too short').max(80),

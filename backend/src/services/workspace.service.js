@@ -4,8 +4,9 @@ import { Workspace } from '../models/Workspace.js';
 import { Invite } from '../models/Invite.js';
 import { env } from '../config/env.js';
 import { decryptSecret } from '../utils/crypto.js';
+import { getUserEntitlements, canWrite } from './entitlements.service.js';
 
-const INVITE_TTL_DAYS = 14;
+const INVITE_TTL_DAYS = 7;
 
 /** Create a personal workspace for a user who doesn't have one yet. */
 export async function ensureWorkspace(user) {
@@ -33,26 +34,34 @@ export async function getWorkspaceOwner(user) {
   return owner || user;
 }
 
-/** Session payload — includes the user's workspace/role for the frontend. */
+/**
+ * Session payload — the user's profile plus their workspace context and the
+ * resolved feature entitlements the frontend gates its nav/routes off of.
+ */
 export async function buildSessionPayload(user) {
   const owner = await getWorkspaceOwner(user);
   const isOwner = String(owner._id) === String(user._id);
+  const role = user.workspaceRole || 'owner';
   return {
     ...user.toSafeJSON(),
     workspace: {
       id: user.workspaceId || null,
-      role: user.workspaceRole || 'owner',
+      role,
       isOwner,
       ownerName: isOwner ? null : owner.name,
+      canManageMembers: canManageMembers(role),
+      canWrite: canWrite(user),
+      assignedFeatures: Array.isArray(user.assignedFeatures) ? user.assignedFeatures : [],
     },
+    entitlements: getUserEntitlements(user),
   };
 }
 
 /** All members of a workspace (users whose workspaceId points here). */
 export async function getMembers(workspaceId) {
-  return User.find({ workspaceId }).select('name email workspaceRole createdAt').sort({
-    createdAt: 1,
-  });
+  return User.find({ workspaceId })
+    .select('name email workspaceRole assignedFeatures createdAt')
+    .sort({ createdAt: 1 });
 }
 
 /** User ids of everyone in the user's workspace (for shared data scope). */
@@ -67,15 +76,16 @@ export async function getWorkspaceMemberIds(user) {
   return { ownerId: owner._id, memberIds: ids };
 }
 
-export const canManageMembers = (role) => role === 'owner' || role === 'admin';
+// Only the workspace owner (the "Admin") manages members, invites, and grants.
+export const canManageMembers = (role) => role === 'owner';
 
 export function makeInviteToken() {
-  return crypto.randomBytes(24).toString('base64url');
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 export function inviteLink(token) {
   const base = (env.clientUrls?.[0] || 'http://localhost:5173').replace(/\/$/, '');
-  return `${base}/accept-invite?token=${token}`;
+  return `${base}/join/${token}`;
 }
 
 export function inviteExpiry() {
@@ -90,6 +100,8 @@ export async function moveToOwnWorkspace(user) {
   });
   user.workspaceId = ws._id;
   user.workspaceRole = 'owner';
+  // They own their new workspace, so per-member grants no longer apply.
+  user.assignedFeatures = [];
   await user.save();
   return ws;
 }

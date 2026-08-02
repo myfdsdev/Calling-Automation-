@@ -9,18 +9,20 @@ import {
   generateAgentScript,
 } from '../controllers/agent.controller.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireFeature, requireEditor } from '../middleware/entitlements.js';
 import { validate } from '../middleware/validate.js';
 import { agentSchema, agentUpdateSchema, generateScriptSchema } from '../validators/schemas.js';
 
 const router = Router();
 router.use(requireAuth);
+router.use(requireFeature('agents'));
 
-router.post('/generate-script', validate(generateScriptSchema), generateAgentScript);
+router.post('/generate-script', requireEditor, validate(generateScriptSchema), generateAgentScript);
 router.get('/', listAgents);
-router.post('/', validate(agentSchema), createAgent);
+router.post('/', requireEditor, validate(agentSchema), createAgent);
 router.get('/:id', getAgent);
-router.put('/:id', validate(agentUpdateSchema), updateAgent);
-router.delete('/:id', deleteAgent);
-router.post('/:id/test', testAgent);
+router.put('/:id', requireEditor, validate(agentUpdateSchema), updateAgent);
+router.delete('/:id', requireEditor, deleteAgent);
+router.post('/:id/test', requireEditor, testAgent);
 
 export default router;

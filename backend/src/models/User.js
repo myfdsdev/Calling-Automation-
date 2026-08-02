@@ -21,11 +21,15 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String, unique: true, sparse: true, trim: true },
     companyName: { type: String, trim: true, default: '' },
 
-    // Workspace membership. Owner of their own workspace by default; members are
-    // moved into someone else's workspace when they accept an invite; data stays
-    // isolated per user.
+    // Workspace membership. `workspaceId` is the user's ACTIVE workspace context:
+    // owner of their own by default; moved into someone else's when they accept an
+    // invite. Data stays isolated per user.
     workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace', default: null },
-    workspaceRole: { type: String, enum: ['owner', 'admin', 'member'], default: 'owner' },
+    workspaceRole: { type: String, enum: ['owner', 'editor', 'viewer'], default: 'owner' },
+    // Features the workspace owner granted this member. Owners implicitly have all
+    // features, so this only matters for editors/viewers. Merged with base access
+    // in getUserEntitlements().
+    assignedFeatures: { type: [String], default: [] },
 
     // The user's own Twilio account, connected from API Settings.
     twilio: {

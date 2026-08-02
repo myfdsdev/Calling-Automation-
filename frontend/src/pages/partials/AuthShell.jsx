@@ -1,3 +1,4 @@
+import { Link, useLocation } from 'react-router-dom';
 import { Bot, Search, PhoneOutgoing, LineChart, ShieldCheck } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 
@@ -25,6 +26,8 @@ const FEATURES = [
 ];
 
 export function AuthShell({ title, subtitle, children }) {
+  const { pathname } = useLocation();
+  const showAdminLink = pathname !== '/register-admin';
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* Left: brand panel (graphite with amber accents) */}
@@ -86,6 +89,15 @@ export function AuthShell({ title, subtitle, children }) {
           </div>
 
           <div className="mt-7">{children}</div>
+
+          {showAdminLink ? (
+            <p className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+              Running an agency or team?{' '}
+              <Link to="/register-admin" className="font-medium text-primary hover:underline">
+                Create an Admin workspace
+              </Link>
+            </p>
+          ) : null}
 
           {/* Mobile-only feature strip (the brand panel is hidden below lg) */}
           <div className="mt-10 space-y-3 border-t border-border pt-6 lg:hidden">

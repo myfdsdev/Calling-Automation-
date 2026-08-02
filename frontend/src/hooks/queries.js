@@ -15,6 +15,10 @@ export function useWorkspaceMutations() {
     mutationFn: async (payload) => (await api.post('/workspace/invites', payload)).data,
     onSuccess: invalidate,
   });
+  const resendInvite = useMutation({
+    mutationFn: async (id) => (await api.post(`/workspace/invites/${id}/resend`)).data,
+    onSuccess: invalidate,
+  });
   const revokeInvite = useMutation({
     mutationFn: async (id) => (await api.delete(`/workspace/invites/${id}`)).data,
     onSuccess: invalidate,
@@ -22,6 +26,11 @@ export function useWorkspaceMutations() {
   const changeRole = useMutation({
     mutationFn: async ({ userId, role }) =>
       (await api.patch(`/workspace/members/${userId}`, { role })).data,
+    onSuccess: invalidate,
+  });
+  const updateFeatures = useMutation({
+    mutationFn: async ({ userId, assignedFeatures }) =>
+      (await api.patch(`/workspace/members/${userId}/features`, { assignedFeatures })).data,
     onSuccess: invalidate,
   });
   const removeMember = useMutation({
@@ -32,7 +41,7 @@ export function useWorkspaceMutations() {
     mutationFn: async (name) => (await api.patch('/workspace', { name })).data,
     onSuccess: invalidate,
   });
-  return { invite, revokeInvite, changeRole, removeMember, rename };
+  return { invite, resendInvite, revokeInvite, changeRole, updateFeatures, removeMember, rename };
 }
 
 /* --------------------------- Dashboard --------------------------- */

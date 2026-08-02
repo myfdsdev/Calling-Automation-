@@ -10,6 +10,7 @@ import {
   deleteLead,
 } from '../controllers/lead.controller.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireFeature, requireEditor } from '../middleware/entitlements.js';
 import { validate } from '../middleware/validate.js';
 import {
   leadSearchSchema,
@@ -22,13 +23,15 @@ import {
 const router = Router();
 router.use(requireAuth);
 
-router.post('/search', validate(leadSearchSchema), searchLeads);
-router.post('/', validate(leadCreateSchema), createLead);
-router.post('/score', validate(scoreSchema), scoreExistingLeads);
-router.post('/select-best', validate(selectBestSchema), selectBestLeads);
-router.get('/', listLeads);
-router.get('/:id', getLead);
-router.put('/:id', validate(leadUpdateSchema), updateLead);
-router.delete('/:id', deleteLead);
+// Discovering leads is the Lead Finder feature; everything else is Leads.
+router.post('/search', requireFeature('lead_finder'), requireEditor, validate(leadSearchSchema), searchLeads);
+
+router.post('/', requireFeature('leads'), requireEditor, validate(leadCreateSchema), createLead);
+router.post('/score', requireFeature('leads'), requireEditor, validate(scoreSchema), scoreExistingLeads);
+router.post('/select-best', requireFeature('leads'), requireEditor, validate(selectBestSchema), selectBestLeads);
+router.get('/', requireFeature('leads'), listLeads);
+router.get('/:id', requireFeature('leads'), getLead);
+router.put('/:id', requireFeature('leads'), requireEditor, validate(leadUpdateSchema), updateLead);
+router.delete('/:id', requireFeature('leads'), requireEditor, deleteLead);
 
 export default router;

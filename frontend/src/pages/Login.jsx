@@ -37,12 +37,10 @@ export default function Login() {
     try {
       await login(values);
       toast.success('Welcome back!');
-      navigate(
-        localStorage.getItem('pendingInviteToken')
-          ? '/accept-invite'
-          : location.state?.from?.pathname || '/',
-        { replace: true },
-      );
+      const pending = localStorage.getItem('pendingInviteToken');
+      navigate(pending ? `/join/${pending}` : location.state?.from?.pathname || '/', {
+        replace: true,
+      });
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not sign in'));
     } finally {
@@ -56,12 +54,10 @@ export default function Login() {
       try {
         await googleAuth({ credential });
         toast.success('Welcome back!');
-        navigate(
-        localStorage.getItem('pendingInviteToken')
-          ? '/accept-invite'
-          : location.state?.from?.pathname || '/',
-        { replace: true },
-      );
+        const pending = localStorage.getItem('pendingInviteToken');
+        navigate(pending ? `/join/${pending}` : location.state?.from?.pathname || '/', {
+          replace: true,
+        });
       } catch (err) {
         toast.error(getErrorMessage(err, 'Could not sign in with Google'));
       } finally {

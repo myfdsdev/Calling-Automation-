@@ -34,15 +34,18 @@ import { cn, initials } from '@/lib/utils';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/agents', label: 'Agents', icon: Bot },
-  { to: '/lead-finder', label: 'Lead Finder', icon: Search },
-  { to: '/leads', label: 'Leads', icon: Users },
-  { to: '/calls', label: 'Calls', icon: PhoneCall },
+  { to: '/agents', label: 'Agents', icon: Bot, feature: 'agents' },
+  { to: '/lead-finder', label: 'Lead Finder', icon: Search, feature: 'lead_finder' },
+  { to: '/leads', label: 'Leads', icon: Users, feature: 'leads' },
+  { to: '/calls', label: 'Calls', icon: PhoneCall, feature: 'calls' },
 ];
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, hasFeature, isOwner } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Members only see the sections the workspace owner granted them.
+  const nav = NAV.filter((item) => !item.feature || hasFeature(item.feature));
 
   const linkClass = ({ isActive }) =>
     cn(
@@ -73,7 +76,7 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <nav className="ml-4 hidden items-center gap-1 md:flex">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
               {({ isActive }) => (
                 <>
@@ -108,11 +111,13 @@ export function Navbar() {
                   <User className="h-4 w-4" /> Account
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/workspace">
-                  <Users className="h-4 w-4" /> Workspace
-                </Link>
-              </DropdownMenuItem>
+              {isOwner ? (
+                <DropdownMenuItem asChild>
+                  <Link to="/workspace">
+                    <Users className="h-4 w-4" /> Users
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem asChild>
                 <Link to="/api-settings">
                   <Settings className="h-4 w-4" /> API Settings
@@ -162,7 +167,7 @@ export function Navbar() {
 
               {/* Drawer nav */}
               <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-                {NAV.map((item) => (
+                {nav.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
@@ -190,13 +195,15 @@ export function Navbar() {
                   >
                     <User className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Account
                   </Link>
-                  <Link
-                    to="/workspace"
-                    onClick={() => setMobileOpen(false)}
-                    className={drawerLinkClass({ isActive: false })}
-                  >
-                    <Users className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Workspace
-                  </Link>
+                  {isOwner ? (
+                    <Link
+                      to="/workspace"
+                      onClick={() => setMobileOpen(false)}
+                      className={drawerLinkClass({ isActive: false })}
+                    >
+                      <Users className="h-[18px] w-[18px] flex-shrink-0 text-graphite-400" /> Users
+                    </Link>
+                  ) : null}
                   <Link
                     to="/api-settings"
                     onClick={() => setMobileOpen(false)}
