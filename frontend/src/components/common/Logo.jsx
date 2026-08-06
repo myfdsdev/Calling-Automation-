@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { PhoneCall } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -30,7 +29,12 @@ export function Logo({ className, light = false }) {
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
       <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-brand-500 text-graphite-950">
-        <PhoneCall className="h-5 w-5" />
+         <img
+        src="/LeadDialer-original.png"
+        alt="leaddialerai"
+        onError={() => setFailed(true)}
+        className={cn('h-9 w-auto object-contain', className)}
+      />
       </span>
       <span
         className={cn(
@@ -38,7 +42,7 @@ export function Logo({ className, light = false }) {
           light ? 'text-white' : 'text-foreground',
         )}
       >
-        LeadCall<span className="text-brand-500"> AI</span>
+        LeadDialer<span className="text-brand-500"> AI</span>
       </span>
     </span>
   );
