@@ -43,7 +43,7 @@ export async function sendEmail({ to, subject, html }) {
 export async function sendPasswordResetEmail({ to, name, resetUrl }) {
   return sendEmail({
     to,
-    subject: 'Reset your LeadCall AI password',
+    subject: 'Reset your leaddialerai password',
     html: passwordResetHtml({ name, resetUrl }),
   });
 }
@@ -60,7 +60,7 @@ export async function sendWorkspaceInviteEmail({
 }) {
   return sendEmail({
     to,
-    subject: `You're invited to join ${workspaceName} on LeadCall AI`,
+    subject: `You're invited to join ${workspaceName} on leaddialerai`,
     html: workspaceInviteHtml({
       inviterName,
       workspaceName,
@@ -91,7 +91,7 @@ function passwordResetHtml({ name, resetUrl }) {
           <tr><td style="padding:8px 32px 0;">
             <h1 style="margin:16px 0 8px;font-size:20px;color:#1C1D21;">Reset your password</h1>
             <p style="margin:0 0 16px;font-size:14px;line-height:22px;color:#5F626B;">
-              Hi ${safeName}, we received a request to reset your LeadCall AI password.
+              Hi ${safeName}, we received a request to reset your leaddialerai password.
               Click the button below to choose a new one. This link expires in 1 hour.
             </p>
           </td></tr>
@@ -156,7 +156,7 @@ export function workspaceInviteHtml({
             <h1 style="margin:16px 0 8px;font-size:20px;color:#1C1D21;">You're invited to ${safeWorkspace}</h1>
             <p style="margin:0 0 16px;font-size:14px;line-height:22px;color:#5F626B;">
               ${safeInviter} invited you to join <strong style="color:#1C1D21;">${safeWorkspace}</strong>
-              on LeadCall AI as a <strong style="color:#1C1D21;">${safeRole}</strong>.
+              on leaddialerai as a <strong style="color:#1C1D21;">${safeRole}</strong>.
             </p>
           </td></tr>
           <tr><td style="padding:0 32px;">

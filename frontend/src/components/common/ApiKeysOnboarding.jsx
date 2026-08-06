@@ -44,7 +44,7 @@ export function ApiKeysOnboarding() {
           </span>
           <DialogTitle>Connect your API keys to get started</DialogTitle>
           <DialogDescription>
-            LeadCall AI uses your own keys to find leads (SerpAPI), write scripts (Gemini) and place
+            leaddialerai uses your own keys to find leads (SerpAPI), write scripts (Gemini) and place
             calls (Vapi). Add them once — they&apos;re verified, encrypted, and used only by your
             workspace.
           </DialogDescription>

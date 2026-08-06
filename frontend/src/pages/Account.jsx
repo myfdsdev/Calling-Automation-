@@ -27,7 +27,7 @@ export default function Account() {
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
-          <CardDescription>Details for your LeadCall AI workspace.</CardDescription>
+          <CardDescription>Details for your leaddialerai workspace.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex items-center gap-4">

@@ -63,7 +63,7 @@ export const env = {
   // Transactional email (password resets) via Resend.
   resend: {
     apiKey: process.env.RESEND_API_KEY || '',
-    // Verified sender on your Resend domain, e.g. "LeadCall AI <noreply@yourdomain.com>".
+    // Verified sender on your Resend domain, e.g. "leaddialerai <noreply@yourdomain.com>".
     from: process.env.RESEND_FROM || '',
   },
 };

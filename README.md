@@ -1,4 +1,4 @@
-# LeadCall AI
+# leaddialerai
 
 A small, focused Micro-SaaS that lets users create an AI calling agent, find local
 business leads, automatically select the best ones, and place automated outbound

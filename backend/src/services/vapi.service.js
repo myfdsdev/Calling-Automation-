@@ -250,7 +250,7 @@ export async function importTwilioNumber({ accountSid, authToken, phoneNumber, l
       number: phoneNumber,
       twilioAccountSid: accountSid,
       twilioAuthToken: authToken,
-      name: label || `LeadCall AI ${phoneNumber}`,
+      name: label || `leaddialerai ${phoneNumber}`,
       ...serverBlock(),
     });
     return data;

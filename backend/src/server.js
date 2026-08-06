@@ -8,7 +8,7 @@ async function bootstrap() {
 
   const app = createApp();
   const server = app.listen(env.port, () => {
-    console.log(`\n  LeadCall AI API running on http://localhost:${env.port}`);
+    console.log(`\n  leaddialerai API running on http://localhost:${env.port}`);
     console.log(`  Environment: ${env.nodeEnv}`);
     console.log('  Integrations (all per-workspace — each owner connects their own in API Settings):');
     console.log('    - Gemini:        per-workspace key');

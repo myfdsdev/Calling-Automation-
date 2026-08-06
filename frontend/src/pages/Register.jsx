@@ -41,7 +41,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await registerUser(values);
-      toast.success('Account created — welcome to LeadCall AI!');
+      toast.success('Account created — welcome to leaddialerai!');
       const pending = localStorage.getItem('pendingInviteToken');
       navigate(pending ? `/join/${pending}` : '/', { replace: true });
     } catch (err) {
@@ -56,7 +56,7 @@ export default function Register() {
       setGoogleSubmitting(true);
       try {
         await googleAuth({ credential, companyName: getValues('companyName') || '' });
-        toast.success('Account ready - welcome to LeadCall AI!');
+        toast.success('Account ready - welcome to leaddialerai!');
         const pending = localStorage.getItem('pendingInviteToken');
         navigate(pending ? `/join/${pending}` : '/', { replace: true });
       } catch (err) {

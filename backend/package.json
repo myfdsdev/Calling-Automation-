@@ -1,7 +1,7 @@
 {
   "name": "leadcall-ai-backend",
   "version": "1.0.0",
-  "description": "LeadCall AI backend — AI calling agents, lead finding, automated outbound calls",
+  "description": "leaddialerai backend — AI calling agents, lead finding, automated outbound calls",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
