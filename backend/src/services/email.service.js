@@ -84,11 +84,6 @@ function passwordResetHtml({ name, resetUrl }) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e2e2df;border-radius:16px;overflow:hidden;">
           <tr><td style="padding:28px 32px 8px;">
             <div style="display:inline-flex;align-items:center;gap:10px;">
-            <img
-        src="/LeadDialer-original.png"
-        alt="leaddialerai"
-        style="height:9px;  width:auto"
-      />
               <span style="font-size:18px;font-weight:700;color:#1C1D21;">Leaddialer <span style="color:#F59E0B;">AI</span></span>
             </div>
           </td></tr>
