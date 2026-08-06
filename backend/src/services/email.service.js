@@ -85,7 +85,7 @@ function passwordResetHtml({ name, resetUrl }) {
           <tr><td style="padding:28px 32px 8px;">
             <div style="display:inline-flex;align-items:center;gap:10px;">
               <span style="display:inline-block;width:36px;height:36px;background:#F59E0B;border-radius:9px;text-align:center;line-height:36px;font-size:18px;">&#128222;</span>
-              <span style="font-size:18px;font-weight:700;color:#1C1D21;">Leaddialer AI <span style="color:#F59E0B;">AI</span></span>
+              <span style="font-size:18px;font-weight:700;color:#1C1D21;">Leaddialer <span style="color:#F59E0B;">AI</span></span>
             </div>
           </td></tr>
           <tr><td style="padding:8px 32px 0;">
